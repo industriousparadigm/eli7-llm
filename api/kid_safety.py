@@ -94,8 +94,9 @@ def clean_response(text: str) -> str:
     # Remove "Want more?" since UI handles this
     result = re.sub(r'Want\s+(to\s+know\s+)?more\??\.?', '', result, flags=re.IGNORECASE)
     
-    # Clean up extra spaces
-    result = re.sub(r'\s+', ' ', result)
+    # Clean up extra spaces BUT PRESERVE NEWLINES!
+    # Only collapse multiple spaces (not newlines) into single space
+    result = re.sub(r'[ \t]+', ' ', result)  # Collapse multiple spaces/tabs
     result = re.sub(r'^\s*[,.]\s*', '', result)  # Remove leading punctuation
     
     return result.strip()
@@ -123,37 +124,17 @@ def truncate_to_two_sentences(text: str) -> str:
 
 def enforce_kid_safety(text: str, language: str = None) -> Tuple[str, bool]:
     """
-    Check for kid-safety issues and do minimal cleanup.
-    The real work should be done by the system prompt.
+    MINIMAL cleanup only - NO TRUNCATION.
+    Claude is smart enough to handle kid-appropriate responses via system prompt.
     Returns (cleaned_text, was_modified)
     """
     if not text:
         return text, False
     
-    # Detect language if not provided
-    if not language:
-        language = detect_language(text)
-    
-    # Minimal cleanup - just remove obvious issues
+    # Just do minimal cleanup of obvious filler phrases
     cleaned = clean_response(text)
     
-    # Check if it has problems
-    needs_fix, issues = needs_rewrite(cleaned)
-    
-    if needs_fix:
-        # Log the issues for monitoring
-        print(f"⚠️ Response has kid-safety issues: {issues}")
-        print(f"   Original: {text[:100]}...")
-        
-        # If there are serious issues, truncate to 2 sentences
-        # and trust the system prompt to do better next time
-        if any('chemical formula' in str(i) or 'banned words' in str(i) for i in issues):
-            cleaned = truncate_to_two_sentences(cleaned)
-            
-            # Add a note that response was truncated
-            print(f"   Truncated to: {cleaned}")
-            return cleaned, True  # Always mark as modified if we truncated
-    
+    # Return cleaned text, mark as modified if we removed any filler
     return cleaned, text != cleaned
 
 

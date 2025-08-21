@@ -51,7 +51,7 @@ Deployment: Raspberry Pi 5
 
 #### 3. API Integration
 - Uses Anthropic's async client
-- Model: `claude-3-5-sonnet-20241022` (Sonnet 4 model ID)
+- Model: `claude-sonnet-4-20250514` (Claude Sonnet 4)
 - Temperature: 0.7 for creativity
 - Max tokens: 300 for appropriate response length
 

@@ -16,6 +16,8 @@ from models import (
     TTSRequest, TTSResponse,
     HealthResponse, VersionResponse
 )
+from pydantic import BaseModel
+from typing import Optional
 from llm_interface import get_llm_backend
 from utils import (
     generate_context_id, chunk_text,
@@ -29,6 +31,31 @@ from kid_safety import (
 
 # Context storage (in-memory for MVP)
 contexts: Dict[str, Dict] = {}
+
+# Settings model
+class UserSettings(BaseModel):
+    name: Optional[str] = None
+    gender: Optional[str] = None  # "male", "female", "neutral"
+    date_of_birth: Optional[str] = None  # ISO format
+    
+# Settings storage (persisted to file)
+SETTINGS_FILE = Path("/app/settings.json")
+
+def load_settings() -> UserSettings:
+    """Load user settings from file."""
+    if SETTINGS_FILE.exists():
+        try:
+            with open(SETTINGS_FILE, "r") as f:
+                data = json.load(f)
+                return UserSettings(**data)
+        except:
+            pass
+    return UserSettings()
+
+def save_settings(settings: UserSettings):
+    """Save user settings to file."""
+    with open(SETTINGS_FILE, "w") as f:
+        json.dump(settings.dict(), f, indent=2)
 
 # Conversation logger
 class ConversationLogger:
@@ -143,7 +170,7 @@ async def ask(request: AskRequest):
                 "content": msg.content
             })
         
-        # Add current date/time to system prompt
+        # Add current date/time and user settings to system prompt
         from datetime import datetime
         import locale
         try:
@@ -153,27 +180,51 @@ async def ask(request: AskRequest):
         
         now = datetime.now()
         date_str = now.strftime("%A, %d de %B de %Y")
-        system_with_date = f"{SYSTEM_PROMPT}\n\nHoje é {date_str}."
+        
+        # Load user settings to personalize response
+        settings = load_settings()
+        personalization = ""
+        
+        if settings.name:
+            personalization += f"\n\nA criança com quem estás a falar chama-se {settings.name}."
+        
+        if settings.gender:
+            if settings.gender == "female":
+                personalization += " Ela é uma menina, usa sempre pronomes femininos."
+            elif settings.gender == "male":
+                personalization += " Ele é um menino, usa sempre pronomes masculinos."
+        
+        if settings.date_of_birth:
+            try:
+                dob = datetime.fromisoformat(settings.date_of_birth)
+                age = (now - dob).days // 365
+                personalization += f" Tem {age} anos."
+            except:
+                pass
+        
+        system_with_date = f"{SYSTEM_PROMPT}{personalization}\n\nHoje é {date_str}."
         
         response = await llm.generate(
             system=system_with_date,
             user=request.question,
             history=messages,  # Pass conversation history
-            max_tokens=int(os.getenv("MAX_TOKENS", 300)),  # Increased for full responses
+            max_tokens=int(os.getenv("MAX_TOKENS", 800)),  # Increased to prevent truncation
             temperature=float(os.getenv("TEMPERATURE", 0.7))  # Slightly higher for fun
         )
         
         full_text = response['text'].strip()
         
-        # Apply kid-safety filtering and rewriting
-        full_text, was_modified = enforce_kid_safety(full_text, language)
+        # DEBUG: Log raw response from Claude
+        newline_count = full_text.count('\n')
+        print(f"\n=== DEBUG: Raw Claude Response ===")
+        print(f"Question: {request.question[:100]}...")
+        print(f"Raw response:\n{full_text}")
+        print(f"Response has {newline_count} newlines")
+        print(f"=================================\n")
         
-        # Apply language-specific formatting
-        full_text = format_for_language(full_text, language)
-        
-        # Log if the response was modified for safety
-        if was_modified:
-            print(f"Response modified by kid-safety filter for: {request.question[:50]}...")
+        # JUST PASS IT THROUGH - NO PROCESSING!
+        # Detect language just for logging
+        language = detect_language(request.question)
         
         # Log the conversation exchange
         session_id = request.session_id or conversation_logger.start_session()
@@ -184,7 +235,7 @@ async def ask(request: AskRequest):
             language=language
         )
         
-        # Return raw markdown - frontend will handle formatting
+        # Return EXACTLY what Claude sent - NO MODIFICATIONS
         return AskResponse(
             response=full_text
         )
@@ -200,6 +251,20 @@ async def tts(request: TTSRequest):
     # Stub implementation for TTS
     # Will integrate Piper TTS when running on Raspberry Pi
     return TTSResponse(audio_url=None)
+
+
+# Settings endpoints
+@app.get("/settings", response_model=UserSettings)
+async def get_settings():
+    """Get current user settings."""
+    return load_settings()
+
+
+@app.post("/settings", response_model=UserSettings)
+async def update_settings(settings: UserSettings):
+    """Update user settings."""
+    save_settings(settings)
+    return settings
 
 
 # Log viewer endpoints
@@ -363,9 +428,18 @@ async def view_logs():
         
         .log-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
+        }
+        
+        .log-number {
+            background: #5cd6b5;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+            font-size: 12px;
         }
         
         .log-time {
@@ -414,6 +488,138 @@ async def view_logs():
             color: #7A889B;
         }
         
+        /* Session grouping styles */
+        .session-group {
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(20, 20, 40, 0.05);
+        }
+        
+        .session-header {
+            padding: 16px 20px;
+            background: linear-gradient(90deg, #5cd6b5, #4fc7a8);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+        
+        .session-header:hover {
+            background: linear-gradient(90deg, #4fc7a8, #42b89b);
+        }
+        
+        .session-toggle {
+            font-size: 14px;
+            width: 20px;
+        }
+        
+        .session-info {
+            flex: 1;
+        }
+        
+        .session-preview {
+            font-size: 14px;
+            opacity: 0.9;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .session-content {
+            padding: 0;
+        }
+        
+        /* Settings Section */
+        .settings-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 14px rgba(20, 20, 40, 0.05);
+        }
+        
+        .settings-section h2 {
+            color: #1e2846;
+            margin: 0 0 20px 0;
+            font-size: 24px;
+        }
+        
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .settings-field label {
+            display: block;
+            margin-bottom: 6px;
+            color: #7A889B;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .settings-field input,
+        .settings-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .settings-field input:focus,
+        .settings-field select:focus {
+            outline: none;
+            border-color: #5cd6b5;
+            box-shadow: 0 0 0 3px rgba(92, 214, 181, 0.15);
+        }
+        
+        .save-settings {
+            background: #5cd6b5;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .save-settings:hover {
+            background: #4fc7a8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(92, 214, 181, 0.3);
+        }
+        
+        .settings-message {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .settings-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .settings-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
         @media (max-width: 640px) {
             .filters {
                 flex-direction: column;
@@ -432,8 +638,37 @@ async def view_logs():
 </head>
 <body>
     <div class="container">
-        <h1>📊 Visualizador de Conversas</h1>
+        <h1>📊 Painel de Administração</h1>
         
+        <!-- Settings Section -->
+        <div class="settings-section">
+            <h2>⚙️ Configurações da Criança</h2>
+            <div class="settings-grid">
+                <div class="settings-field">
+                    <label for="childName">Nome</label>
+                    <input type="text" id="childName" placeholder="Ex: Diana">
+                </div>
+                <div class="settings-field">
+                    <label for="childGender">Género</label>
+                    <select id="childGender">
+                        <option value="">Selecionar...</option>
+                        <option value="female">Menina</option>
+                        <option value="male">Menino</option>
+                        <option value="neutral">Neutro</option>
+                    </select>
+                </div>
+                <div class="settings-field">
+                    <label for="childDOB">Data de Nascimento</label>
+                    <input type="date" id="childDOB">
+                </div>
+                <button onclick="saveSettings()" class="save-settings">💾 Guardar Configurações</button>
+            </div>
+            <div id="settingsMessage" class="settings-message"></div>
+        </div>
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e5e5;">
+        
+        <h2>📈 Estatísticas</h2>
         <div class="stats" id="stats">
             <div class="stat-card">
                 <div class="stat-value" id="totalConversations">0</div>
@@ -488,6 +723,56 @@ async def view_logs():
         let allLogs = [];
         let filteredLogs = [];
         
+        // Load settings when page loads
+        async function loadSettings() {
+            try {
+                const response = await fetch('/settings');
+                if (response.ok) {
+                    const settings = await response.json();
+                    document.getElementById('childName').value = settings.name || '';
+                    document.getElementById('childGender').value = settings.gender || '';
+                    document.getElementById('childDOB').value = settings.date_of_birth || '';
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        }
+        
+        // Save settings
+        async function saveSettings() {
+            const settings = {
+                name: document.getElementById('childName').value,
+                gender: document.getElementById('childGender').value,
+                date_of_birth: document.getElementById('childDOB').value
+            };
+            
+            try {
+                const response = await fetch('/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+                
+                const messageDiv = document.getElementById('settingsMessage');
+                if (response.ok) {
+                    messageDiv.className = 'settings-message success';
+                    messageDiv.textContent = '✅ Configurações guardadas com sucesso!';
+                    setTimeout(() => {
+                        messageDiv.className = 'settings-message';
+                        messageDiv.textContent = '';
+                    }, 3000);
+                } else {
+                    messageDiv.className = 'settings-message error';
+                    messageDiv.textContent = '❌ Erro ao guardar configurações';
+                }
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                const messageDiv = document.getElementById('settingsMessage');
+                messageDiv.className = 'settings-message error';
+                messageDiv.textContent = '❌ Erro ao guardar configurações';
+            }
+        }
+        
         async function loadLogs() {
             try {
                 const response = await fetch('/logs-data');
@@ -535,27 +820,80 @@ async def view_logs():
                 return;
             }
             
-            container.innerHTML = filteredLogs.map(log => {
-                const date = new Date(log.timestamp);
-                const formattedDate = date.toLocaleDateString('pt-PT');
-                const formattedTime = date.toLocaleTimeString('pt-PT');
+            // Group logs by session
+            const sessions = {};
+            filteredLogs.forEach(log => {
+                if (!sessions[log.session_id]) {
+                    sessions[log.session_id] = [];
+                }
+                sessions[log.session_id].push(log);
+            });
+            
+            // Sort sessions by most recent activity
+            const sortedSessions = Object.entries(sessions)
+                .sort(([,a], [,b]) => new Date(b[0].timestamp) - new Date(a[0].timestamp));
+            
+            // Render sessions
+            container.innerHTML = sortedSessions.map(([sessionId, logs], index) => {
+                // Sort logs within session by timestamp (oldest first for chronological order)
+                const chronologicalLogs = [...logs].sort((a, b) => 
+                    new Date(a.timestamp) - new Date(b.timestamp)
+                );
+                
+                const firstLog = chronologicalLogs[0];
+                const sessionDate = new Date(firstLog.timestamp);
+                const formattedDate = sessionDate.toLocaleDateString('pt-PT');
+                const formattedTime = sessionDate.toLocaleTimeString('pt-PT');
+                const isExpanded = index === 0; // Only expand the most recent session
                 
                 return `
-                    <div class="log-entry">
-                        <div class="log-header">
-                            <span class="log-time">${formattedDate} às ${formattedTime}</span>
-                            <span class="log-session">${log.session_id}</span>
+                    <div class="session-group">
+                        <div class="session-header" onclick="toggleSession('${sessionId}')">
+                            <span class="session-toggle" id="toggle-${sessionId}">${isExpanded ? '▼' : '▶'}</span>
+                            <span class="session-info">
+                                <strong>Sessão ${sessionId}</strong> - 
+                                ${formattedDate} às ${formattedTime} - 
+                                ${chronologicalLogs.length} pergunta${chronologicalLogs.length > 1 ? 's' : ''}
+                            </span>
+                            <span class="session-preview">${escapeHtml(firstLog.question.substring(0, 50))}...</span>
                         </div>
-                        <div class="log-question">❓ ${escapeHtml(log.question)}</div>
-                        <div class="log-response">💬 ${escapeHtml(log.response)}</div>
-                        <div class="log-meta">
-                            <span>🌐 ${log.language}</span>
-                            <span>📏 ${log.response_length} caracteres</span>
-                            <span>📅 ${log.day_of_week}</span>
+                        <div class="session-content" id="session-${sessionId}" style="display: ${isExpanded ? 'block' : 'none'}">
+                            ${chronologicalLogs.map((log, logIndex) => {
+                                const logDate = new Date(log.timestamp);
+                                const logTime = logDate.toLocaleTimeString('pt-PT');
+                                
+                                return `
+                                    <div class="log-entry">
+                                        <div class="log-header">
+                                            <span class="log-number">Q${logIndex + 1}</span>
+                                            <span class="log-time">${logTime}</span>
+                                        </div>
+                                        <div class="log-question">❓ ${escapeHtml(log.question)}</div>
+                                        <div class="log-response">💬 ${escapeHtml(log.response)}</div>
+                                        <div class="log-meta">
+                                            <span>🌐 ${log.language}</span>
+                                            <span>📏 ${log.response_length} caracteres</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+        
+        function toggleSession(sessionId) {
+            const content = document.getElementById(`session-${sessionId}`);
+            const toggle = document.getElementById(`toggle-${sessionId}`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+            }
         }
         
         function escapeHtml(text) {
@@ -610,7 +948,8 @@ async def view_logs():
             renderLogs();
         }
         
-        // Load logs on page load
+        // Load settings and logs on page load
+        loadSettings();
         loadLogs();
         
         // Auto-refresh every 30 seconds

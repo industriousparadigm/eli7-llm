@@ -49,26 +49,56 @@ function App() {
     }
   }
   
-  // Keep focus on input field
+  // Auto-resize textarea based on content
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = inputRef.current
+    if (textarea) {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = 'auto'
+      // Set height to scrollHeight (content height)
+      textarea.style.height = `${textarea.scrollHeight}px`
+    }
+  }, [])
+
+  // Smart focus management
   useEffect(() => {
-    const handleFocus = () => {
-      // Only refocus if nothing else is selected
-      if (document.activeElement?.tagName !== 'BUTTON' && 
-          document.activeElement?.tagName !== 'TEXTAREA') {
+    // Focus on initial load
+    inputRef.current?.focus()
+  }, []) // Only on mount
+  
+  // Focus after window gains focus
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      if (!document.activeElement?.matches('input, textarea, select')) {
         inputRef.current?.focus()
       }
     }
     
-    // Refocus on click anywhere in the app
-    document.addEventListener('click', handleFocus)
-    
-    // Refocus when window regains focus
-    window.addEventListener('focus', handleFocus)
-    
-    return () => {
-      document.removeEventListener('click', handleFocus)
-      window.removeEventListener('focus', handleFocus)
+    window.addEventListener('focus', handleWindowFocus)
+    return () => window.removeEventListener('focus', handleWindowFocus)
+  }, [])
+  
+  // Capture any keyboard input and focus the input
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Don't capture if already typing in an input
+      if (document.activeElement?.matches('input, textarea, select')) {
+        return
+      }
+      
+      // Don't capture special keys
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        return
+      }
+      
+      // If it's a printable character, focus the input
+      if (e.key.length === 1 && !e.target.matches('button')) {
+        inputRef.current?.focus()
+      }
     }
+    
+    document.addEventListener('keydown', handleKeyPress)
+    return () => document.removeEventListener('keydown', handleKeyPress)
   }, [])
 
   // Scroll to bottom when new messages arrive
@@ -112,6 +142,11 @@ function App() {
     setError(null)
     setShowChips(false)
     
+    // Reset textarea height after submission
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'
+    }
+    
     // Add question to messages and history
     const newMessageId = Date.now().toString()
     const newMessage = {
@@ -139,6 +174,13 @@ function App() {
       
       const data = await response.json()
       
+      // DEBUG: Log what we received from API
+      console.log('=== DEBUG: Frontend received ===')
+      console.log('Raw response:', data.response)
+      console.log('Response length:', data.response.length)
+      console.log('Number of newlines:', (data.response.match(/\n/g) || []).length)
+      console.log('================================')
+      
       // Update message with answer
       setMessages(prev => prev.map(msg => 
         msg.id === newMessageId
@@ -162,8 +204,8 @@ function App() {
       setMessages(prev => prev.filter(msg => msg.id !== newMessageId))
     } finally {
       setLoading(false)
-      // Small delay to ensure DOM is updated
-      setTimeout(() => inputRef.current?.focus(), 50)
+      // Focus input after response is complete
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
   }
 
@@ -171,8 +213,9 @@ function App() {
   // Handle chip click
   const handleChipClick = (question) => {
     setInput(question)
-    // Auto-submit after a brief delay for better UX
+    // Trigger textarea resize after setting the input
     setTimeout(() => {
+      adjustTextareaHeight()
       handleSubmit()
       inputRef.current?.focus()
     }, 100)
@@ -288,7 +331,10 @@ function App() {
                 ref={inputRef}
                 className="input"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value)
+                  adjustTextareaHeight()
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder={copy.ui.inputPlaceholder}
                 disabled={loading}

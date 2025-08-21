@@ -122,65 +122,191 @@
   animation: fadeUp 0.15s ease-out;
 }
 
-/* Markdown content styling */
+/* Markdown content styling - Comprehensive ReactMarkdown support */
 .markdown-content {
   font-size: inherit;
-  line-height: 1.6;
-  color: inherit;
-}
-
-/* Paragraphs */
-.markdown-content p {
-  margin: 0 0 12px 0;
-}
-
-.markdown-content p:last-child {
-  margin-bottom: 0;
-}
-
-/* Lists */
-.markdown-content ul,
-.markdown-content ol {
-  margin: 12px 0;
-  padding-left: 24px;
-}
-
-.markdown-content li {
-  margin: 6px 0;
-  line-height: 1.5;
+  line-height: 1.7;
   color: var(--ink);
 }
 
-.markdown-content ul {
+/* Direct child selectors for ReactMarkdown elements */
+
+/* Headings */
+.markdown-content > h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 20px;
+  margin-bottom: 16px;
+  line-height: 1.3;
+}
+
+.markdown-content > h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 18px;
+  margin-bottom: 14px;
+  line-height: 1.3;
+}
+
+.markdown-content > h3 {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-top: 16px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+/* Paragraphs - CRITICAL for proper spacing */
+.markdown-content > p {
+  margin: 0 0 16px 0;
+  line-height: 1.7;
+  white-space: pre-wrap; /* Preserve line breaks within paragraphs */
+}
+
+.markdown-content > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists - Both unordered and ordered */
+.markdown-content > ul,
+.markdown-content > ol {
+  margin: 16px 0;
+  padding-left: 28px;
+  list-style-position: outside;
+}
+
+.markdown-content > ul {
   list-style-type: disc;
 }
 
-.markdown-content ol {
+.markdown-content > ol {
   list-style-type: decimal;
 }
 
-.markdown-content ul li::marker,
-.markdown-content ol li::marker {
-  color: var(--accent);
+.markdown-content > ul > li,
+.markdown-content > ol > li {
+  margin: 8px 0;
+  line-height: 1.6;
+  color: var(--ink);
+  padding-left: 4px;
 }
 
-/* Strong/emphasis */
-.markdown-content strong {
+/* Nested lists */
+.markdown-content > ul > li > ul,
+.markdown-content > ol > li > ol,
+.markdown-content > ul > li > ol,
+.markdown-content > ol > li > ul {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+/* List markers */
+.markdown-content > ul > li::marker,
+.markdown-content > ol > li::marker {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Strong/Bold text - Use descendant selector for all nested cases */
+.markdown-content strong,
+.markdown-content b {
   font-weight: 600;
   color: var(--ink);
 }
 
-.markdown-content em {
+/* Emphasis/Italic */
+.markdown-content em,
+.markdown-content i {
   font-style: italic;
+  color: var(--ink);
 }
 
-/* Code */
+/* Links */
+.markdown-content a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+/* Inline code */
 .markdown-content code {
   background: rgba(92, 214, 181, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
   font-size: 0.9em;
+  color: var(--ink);
+}
+
+/* Code blocks */
+.markdown-content > pre {
+  background: rgba(30, 40, 70, 0.05);
+  border: 1px solid rgba(30, 40, 70, 0.1);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.markdown-content > pre > code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Blockquotes */
+.markdown-content > blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+  margin: 16px 0;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+/* Horizontal rules */
+.markdown-content > hr {
+  border: none;
+  border-top: 1px solid rgba(30, 40, 70, 0.1);
+  margin: 20px 0;
+}
+
+/* Tables (if needed) */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: 8px 12px;
+  border: 1px solid rgba(30, 40, 70, 0.1);
+  text-align: left;
+}
+
+.markdown-content th {
+  background: rgba(92, 214, 181, 0.1);
+  font-weight: 600;
+}
+
+/* First and last child margin resets */
+.markdown-content > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-content > *:last-child {
+  margin-bottom: 0;
 }
 
 .answer-chunk {
@@ -381,8 +507,11 @@
   color: var(--ink);
   font-family: var(--font-body);
   resize: none;
-  min-height: 24px;
-  max-height: 120px;
+  min-height: 28px;
+  max-height: 150px;
+  line-height: 1.4;
+  overflow-y: auto;
+  transition: height 0.1s ease;
 }
 
 .input::placeholder {
@@ -416,6 +545,141 @@
 }
 
 .submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* Settings Modal */
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.settings-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: fadeUp 0.3s ease;
+}
+
+.settings-modal h2 {
+  margin: 0 0 20px 0;
+  color: var(--ink);
+  font-size: 24px;
+}
+
+.settings-field {
+  margin-bottom: 16px;
+}
+
+.settings-field label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.settings-field input,
+.settings-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(30, 40, 70, 0.15);
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: var(--font-body);
+  transition: border-color 0.15s;
+}
+
+.settings-field input:focus,
+.settings-field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.settings-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.settings-save,
+.settings-cancel {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  font-family: var(--font-body);
+}
+
+.settings-save {
+  background: var(--accent);
+  color: white;
+}
+
+.settings-save:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(92, 214, 181, 0.3);
+}
+
+.settings-cancel {
+  background: rgba(30, 40, 70, 0.08);
+  color: var(--ink-muted);
+}
+
+.settings-cancel:hover {
+  background: rgba(30, 40, 70, 0.12);
+}
+
+/* Settings button */
+.top-buttons {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  display: flex;
+  gap: 12px;
+}
+
+.settings-button {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(30, 40, 70, 0.08);
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 14px rgba(20, 20, 40, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-button:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(92, 214, 181, 0.3);
+}
+
+.settings-button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--ring);
 }
