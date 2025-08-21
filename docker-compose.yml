@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  api:
+    build: ./api
+    container_name: soft-terminal-api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
+      - MAX_TOKENS=${MAX_TOKENS:-200}
+      - SAVE_TRANSCRIPTS=${SAVE_TRANSCRIPTS:-false}
+    env_file:
+      - .env  # Load from .env file
+    volumes:
+      - ./api:/app
+      - ./logs:/app/logs  # Mount logs directory for conversation history
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  ui:
+    build: ./ui
+    container_name: soft-terminal-ui
+    ports:
+      - "${UI_PORT:-3000}:5173"
+    environment:
+      - VITE_API_URL=http://localhost:${API_PORT:-8000}
+    volumes:
+      - ./ui:/app
+      - /app/node_modules
+    command: npm run dev -- --host

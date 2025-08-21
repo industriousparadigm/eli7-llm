@@ -1,0 +1,56 @@
+:root {
+  /* Daylight Canvas Design Tokens */
+  /* Background gradients */
+  --bg-1: #F7F5FF;   /* pale lavender */
+  --bg-2: #EEF6FF;   /* pale sky */
+  --bg-3: #FFFFFF;   /* near white at horizon */
+  
+  /* Text colors */
+  --ink: #1C2230;        /* primary text */
+  --ink-muted: #5F6B85;  /* secondary text */
+  
+  /* Accent colors */
+  --accent: #5CD6B5;     /* mint - primary action */
+  --accent-2: #FFB3DE;   /* blossom pink - used sparingly */
+  --accent-3: #7DB7FF;   /* sky blue - focus states */
+  --ring: rgba(125, 183, 255, 0.55);  /* focus ring */
+  
+  /* Layout */
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --gap: 14px;
+  --max-width: 740px;
+  --prompt-height: 64px;
+  
+  /* Typography */
+  --font-body: "Lexend", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-size-title: 32px;
+  --font-size-subtitle: 20px;
+  --font-size-body: 20px;
+  --font-size-chip: 18px;
+  --font-size-small: 16px;
+  --line-height: 1.6;
+  --font-weight-normal: 400;
+  --font-weight-semibold: 600;
+  
+  /* Animation */
+  --transition-fast: 150ms ease-out;
+  --transition-normal: 200ms ease-out;
+  --transition-slow: 350ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-normal: 0ms;
+    --transition-slow: 0ms;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --font-size-body: 20px;
+    --max-width: 100%;
+    --prompt-height: 72px;
+  }
+}

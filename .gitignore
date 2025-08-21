@@ -1,0 +1,96 @@
+# Environment variables
+.env
+.env.local
+.env.production
+.env.*.local
+*.env
+
+# API Keys and Secrets  
+*api_key*
+*secret*
+*.key
+*.pem
+ANTHROPIC_API_KEY
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+*.cover
+.hypothesis/
+htmlcov/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp
+.pnp.js
+.npm
+/ui/dist/
+/ui/build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+ollama-data/
+*.bak
+
+# Logs and data
+/logs/
+*.jsonl
+transcripts/
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# OS Files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Backup files
+*.backup
+*.bak
+*.old
