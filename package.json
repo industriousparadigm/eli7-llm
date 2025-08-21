@@ -1,0 +1,19 @@
+{
+  "name": "soft-terminal-llm",
+  "version": "1.0.0",
+  "description": "Soft Terminal LLM for 7-year-olds",
+  "scripts": {
+    "start": "./start.sh",
+    "stop": "docker-compose down",
+    "restart": "docker-compose restart",
+    "logs": "docker-compose logs -f",
+    "logs:api": "docker-compose logs -f api",
+    "logs:ui": "docker-compose logs -f ui",
+    "build": "docker-compose build",
+    "rebuild": "docker-compose down && docker-compose up -d --build",
+    "dev": "docker-compose up"
+  },
+  "keywords": ["llm", "education", "raspberry-pi"],
+  "author": "",
+  "license": "MIT"
+}

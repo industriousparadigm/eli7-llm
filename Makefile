@@ -27,9 +27,6 @@ logs-api: ## Show API logs
 logs-ui: ## Show UI logs
 	docker compose logs -f ui
 
-logs-ollama: ## Show Ollama logs
-	docker compose logs -f ollama
-
 test-smoke: ## Run smoke tests
 	./tests/smoke_test.sh
 
@@ -43,9 +40,6 @@ shell-api: ## Open shell in API container
 
 shell-ui: ## Open shell in UI container
 	docker compose exec ui /bin/sh
-
-pull-model: ## Manually pull Ollama model
-	docker compose exec ollama ollama pull phi3:mini
 
 clean: ## Clean up containers and volumes
 	docker compose down -v

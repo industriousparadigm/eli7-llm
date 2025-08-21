@@ -41,6 +41,7 @@ Deployment: Raspberry Pi 5
 - **Backend returns raw markdown** - NO HTML conversion
 - **Lists MUST use line breaks** - Each bullet on its own line
 - **CSS handles all styling** - Via `.markdown-content` classes
+- **IMPORTANT**: ReactMarkdown does NOT accept className prop - apply classes to parent div
 
 #### 2. Session Management
 - Sessions are UUID-based
@@ -215,10 +216,12 @@ docker-compose down && docker-compose up -d --build
 
 ### If formatting breaks:
 ```javascript
-// Ensure App.jsx uses:
-<ReactMarkdown className="markdown-content">
-  {message.response}
-</ReactMarkdown>
+// Ensure App.jsx uses (NO className on ReactMarkdown!):
+<div className="bubble markdown-content">
+  <ReactMarkdown>
+    {message.response}
+  </ReactMarkdown>
+</div>
 ```
 
 ### If API fails:

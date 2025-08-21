@@ -226,8 +226,8 @@ function App() {
                 </div>
                 
                 {message.response && (
-                  <div className="bubble" role="article" aria-label={copy.a11y.bubble}>
-                    <ReactMarkdown className="markdown-content">
+                  <div className="bubble markdown-content" role="article" aria-label={copy.a11y.bubble}>
+                    <ReactMarkdown>
                       {message.response}
                     </ReactMarkdown>
                   </div>
