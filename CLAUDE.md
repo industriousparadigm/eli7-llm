@@ -256,6 +256,64 @@ Your changes are successful when:
 
 ---
 
+## 🍓 Raspberry Pi Deployment Workflow
+
+### Development → Production Pipeline
+
+1. **Local Development** (Mac):
+   - Make changes locally
+   - Test with `docker-compose up -d` and `cd ui && npm run dev`
+   - UI runs on port 5173 (not 3000!)
+
+2. **Deploy to Pi**:
+   ```bash
+   ./deploy-to-pi.sh
+   ```
+   This handles everything: sync, dependencies, restart
+
+3. **Access on Pi**:
+   - From network: `http://192.168.1.100:5173`
+   - On Pi screen: `~/soft-terminal-llm/launch-browser.sh`
+
+### Critical Pi Lessons Learned
+
+1. **Node modules MUST be installed on Pi**:
+   - NEVER copy node_modules from Mac (x86) to Pi (ARM64)
+   - Always run `npm install` on Pi after syncing code
+
+2. **HDMI Issues on Pi 5**:
+   - Flickering screen often = HDMI cable issue, not power
+   - Try reseating HDMI cable first before debugging power
+
+3. **Production Secrets**:
+   - Use `.env.production` locally (gitignored)
+   - Deploy script copies to `.env` on Pi
+   - NEVER commit API keys or WiFi passwords
+
+4. **UI Port is 5173**:
+   - Vite dev server runs on 5173, not 3000
+   - Update all documentation accordingly
+
+### Scrolling Behavior (Important UX)
+
+The app has TWO different scroll behaviors:
+
+1. **When question is asked**: 
+   - Scrolls to BOTTOM to show question + loading dots
+   - User sees their question and knows it's processing
+
+2. **When answer arrives**:
+   - Scrolls to position question at TOP of viewport
+   - User can read answer from beginning without scrolling up
+   - Essential for long answers on small screens
+
+Implementation in `App.jsx`:
+```javascript
+// Two separate scroll functions
+scrollToBottom() // For questions
+scrollToLastQuestion() // For answers (positions question at top)
+```
+
 **Remember**: This is a tool for children's education and wonder. Every decision should prioritize simplicity, safety, and delight. When in doubt, choose the solution that would make a 7-year-old smile.
 
 Good luck, future Claude! 🌟

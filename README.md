@@ -36,9 +36,65 @@ docker-compose up -d
 ```
 
 4. Access the application:
-- **Main App**: http://localhost:3000
+- **Main App**: http://localhost:5173 (Note: UI runs on Vite port)
 - **Log Viewer**: http://localhost:8000/logs
 - **API Docs**: http://localhost:8000/docs
+
+## 🍓 Raspberry Pi Deployment
+
+### One-Command Deploy from Mac/Linux
+
+After initial Pi setup, deploy changes with:
+```bash
+./deploy-to-pi.sh
+```
+
+This script:
+- Syncs code to Pi (excluding node_modules)
+- Copies production environment (.env.production → .env)
+- Installs dependencies
+- Restarts all services
+- Shows access URLs and log commands
+
+### Initial Pi Setup
+
+1. **Flash Raspberry Pi OS** using Raspberry Pi Imager:
+   - Choose Raspberry Pi OS Lite (64-bit)
+   - Configure WiFi, SSH, and user in settings
+   - Username: diogo, Password: diogo (or your preference)
+
+2. **SSH into Pi and run setup**:
+```bash
+ssh diogo@192.168.1.100
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs xorg openbox chromium-browser fonts-noto-color-emoji
+```
+
+3. **Deploy the app**:
+```bash
+# On your Mac:
+./deploy-to-pi.sh
+```
+
+4. **Display on Pi Screen** (optional):
+```bash
+# On Pi:
+~/soft-terminal-llm/launch-browser.sh
+```
+
+### Production Environment
+
+Create `.env.production` (gitignored) with your secrets:
+```bash
+# Production environment variables for Raspberry Pi
+ANTHROPIC_API_KEY=your-actual-api-key
+API_PORT=8000
+UI_PORT=5173
+TEMPERATURE=0.7
+MAX_TOKENS=1500
+```
 
 ## 🏗️ Architecture
 

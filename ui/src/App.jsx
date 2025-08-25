@@ -101,18 +101,45 @@ function App() {
     return () => document.removeEventListener('keydown', handleKeyPress)
   }, [])
 
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom when question is asked
   const scrollToBottom = useCallback(() => {
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       if (feedRef.current) {
         feedRef.current.scrollTop = feedRef.current.scrollHeight
       }
-    })
+    }, 50)
   }, [])
 
+  // Scroll to show the last question when answer arrives
+  const scrollToLastQuestion = useCallback(() => {
+    // Use setTimeout to ensure DOM has updated
+    setTimeout(() => {
+      if (feedRef.current && messages.length > 0) {
+        // Find the last bubble group (contains question and answer)
+        const bubbleGroups = feedRef.current.querySelectorAll('.bubble-group')
+        if (bubbleGroups.length > 0) {
+          const lastGroup = bubbleGroups[bubbleGroups.length - 1]
+          // Scroll so the question is at the top of the viewport
+          // Adding a small offset (80px) to account for any padding
+          const topOffset = lastGroup.offsetTop - 80
+          feedRef.current.scrollTop = topOffset
+        }
+      }
+    }, 100) // Small delay to ensure answer has rendered
+  }, [messages])
+
   useEffect(() => {
-    scrollToBottom()
-  }, [messages, scrollToBottom])
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage) {
+      if (lastMessage.response) {
+        // When answer arrives, scroll to show question at top
+        scrollToLastQuestion()
+      } else {
+        // When question is asked, scroll to bottom to show question + loading
+        scrollToBottom()
+      }
+    }
+  }, [messages, scrollToLastQuestion, scrollToBottom])
 
   // Handle idle state
   useEffect(() => {
