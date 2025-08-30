@@ -17,6 +17,13 @@ Create a **safe, engaging, and educational** conversational AI experience for 7-
 4. **UI Language**: Portuguese (PT-PT) - all interface text
 5. **Response Language**: Adapts to question language (PT/EN)
 
+### 🚨 CRITICAL REQUIREMENT: Visible GUI on Boot
+**The app MUST be VISIBLE on the Pi's screen when it boots** - not just running in the background!
+- A 7-year-old child needs to SEE the interface immediately
+- The browser should auto-launch in full-screen kiosk mode
+- No command line, no manual steps - just turn on and use
+- This is NOT a headless server - it's a child's interactive terminal
+
 ### Product Philosophy
 - **NOT prescriptive**: Let Claude naturally generate age-appropriate responses
 - **NOT limiting**: No artificial 2-sentence limits or overly strict constraints
@@ -258,12 +265,19 @@ Your changes are successful when:
 
 ## 🍓 Raspberry Pi Deployment Workflow
 
+### ⚠️ CRITICAL: PORT CONFUSION RESOLUTION
+**THE UI RUNS ON PORT 5173 IN DEV, PORT 3000 IN DOCKER!**
+- **Development mode**: Port 5173 (Vite default)
+- **Docker mode**: Port 3000 (mapped to internal 5173)
+- **Browser launcher**: Must use correct port based on setup
+- **This has caused repeated issues - CHECK YOUR MODE!**
+
 ### Development → Production Pipeline
 
 1. **Local Development** (Mac):
    - Make changes locally
    - Test with `docker-compose up -d` and `cd ui && npm run dev`
-   - UI runs on port 5173 (not 3000!)
+   - UI runs on port 5173 directly, or 3000 via Docker
 
 2. **Deploy to Pi**:
    ```bash
@@ -272,8 +286,9 @@ Your changes are successful when:
    This handles everything: sync, dependencies, restart
 
 3. **Access on Pi**:
-   - From network: `http://192.168.1.100:5173`
-   - On Pi screen: `~/soft-terminal-llm/launch-browser.sh`
+   - Via Docker: `http://192.168.1.100:3000` ✅
+   - Direct Vite: `http://192.168.1.100:5173`
+   - On Pi screen: Browser must open correct port!
 
 ### Critical Pi Lessons Learned
 
