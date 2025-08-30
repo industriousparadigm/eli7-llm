@@ -1,22 +1,22 @@
 #!/bin/bash
 # Launch Soft Terminal in kiosk mode on Raspberry Pi
-# FIXED: Checks BOTH ports (3000 for Docker, 5173 for direct)
+# FIXED: Works from console or desktop, checks both ports
 
 echo "🚀 Launching Soft Terminal Browser"
 echo "==================================="
 
-# Check if running via SSH and set display
-if [ -n "$SSH_CONNECTION" ]; then
-    echo "Running via SSH - setting DISPLAY=:0"
-    export DISPLAY=:0
-fi
+# Always set display
+export DISPLAY=:0
 
-# Check if display is available
-if ! xset q &>/dev/null; then
-    echo "❌ No display available!"
-    echo "   This must be run on the Pi's desktop."
-    echo "   If using SSH, try: DISPLAY=:0 $0"
-    exit 1
+# If no X server, start desktop environment
+if ! xset q &>/dev/null 2>&1; then
+    if [ -z "$SSH_CONNECTION" ]; then
+        echo "Starting desktop environment..."
+        startx &
+        sleep 10
+    else
+        echo "Note: Running via SSH, display might not be available"
+    fi
 fi
 
 # Kill any existing chromium instances
