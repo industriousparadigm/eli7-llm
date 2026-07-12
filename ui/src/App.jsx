@@ -99,6 +99,18 @@ const pickDiverseChips = (candidates) => {
   return picks
 }
 
+// Picks a random loading caption, avoiding an immediate repeat of `prev`
+// when there's more than one option to choose from.
+const pickLoadingCaption = (prev) => {
+  const options = copy.thinkingCaptions
+  if (options.length <= 1) return options[0] ?? ''
+  let next = options[Math.floor(Math.random() * options.length)]
+  while (next === prev) {
+    next = options[Math.floor(Math.random() * options.length)]
+  }
+  return next
+}
+
 function App() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -112,6 +124,9 @@ function App() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   // { start, end, results, highlighted } for the active ":" match, or null
   const [autocomplete, setAutocomplete] = useState(null)
+  // Caption shown under the loading dots - re-picked each time a question is
+  // asked, see pickLoadingCaption below
+  const [loadingCaption, setLoadingCaption] = useState(copy.thinkingCaptions[0])
 
   const feedRef = useRef(null)
   const inputRef = useRef(null)
@@ -360,6 +375,7 @@ function App() {
     
     setInput('')
     setLoading(true)
+    setLoadingCaption(prev => pickLoadingCaption(prev))
     setError(null)
     setShowChips(false)
     setShowEmojiPicker(false)
@@ -575,7 +591,7 @@ function App() {
           {loading && (
             <div className="loading" role="status" aria-label={copy.a11y.loading}>
               <CloudMascot size={90} mood="thinking" className="mascot-thinking" />
-              <p className="loading-text">{copy.ui.thinking}</p>
+              <p className="loading-text">{loadingCaption}</p>
               <div className="loading-dots">
                 <div className="loading-dot"></div>
                 <div className="loading-dot"></div>

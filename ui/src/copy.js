@@ -41,8 +41,17 @@ export const copy = {
     promptSymbol: "❯",
     retry: "Tentar outra vez?",
     send: "Enviar",
-    thinking: "A pensar numa resposta divertida para ti...",
   },
+
+  // Loading captions - one is picked at random each time a question is asked,
+  // so the loading state doesn't always look identical.
+  thinkingCaptions: [
+    "A pensar numa resposta divertida para ti...",
+    "A imaginar...",
+    "A espreitar as nuvens...",
+    "Deixa-me pensar...",
+    "A procurar uma ideia...",
+  ],
   
   // Error messages
   errors: {

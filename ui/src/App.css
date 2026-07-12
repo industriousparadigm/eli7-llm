@@ -209,6 +209,8 @@
   font-weight: 700;
   font-size: 18px;
   animation: fadeUp 0.15s ease-out;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .question-symbol {
@@ -220,6 +222,9 @@
 
 .question-text {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .answer-row {
@@ -244,6 +249,8 @@
   font-size: 19px;
   min-width: 0;
   animation: fadeUp 0.15s ease-out;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Markdown content styling - Comprehensive ReactMarkdown support */
@@ -251,6 +258,8 @@
   font-size: inherit;
   line-height: 1.7;
   color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Direct child selectors for ReactMarkdown elements */
@@ -714,6 +723,8 @@
   max-height: 150px;
   line-height: 1.4;
   overflow-y: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   transition: height 0.1s ease;
 }
 
