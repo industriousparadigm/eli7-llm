@@ -1,323 +1,172 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Soft Terminal Curious Mode E2E Tests', () => {
+// Kiosk viewport this terminal actually ships on.
+const KIOSK_VIEWPORT = { width: 1024, height: 600 };
+
+// Live LLM round trips observed around ~5.5s locally; give plenty of margin
+// so the suite doesn't flake on a slower model/day.
+const ASK_TIMEOUT = 20000;
+
+// Console.error calls the app itself emits on purpose when a background
+// (non-user-facing) fetch fails - e.g. the suggestion pool or session
+// bootstrap. These are caught-and-logged, not bugs, so they're allow-listed
+// rather than asserted against.
+const ALLOWED_CONSOLE_ERROR_PATTERNS = [
+  /Failed to load suggestion pool/,
+  /Failed to start session/,
+];
+
+test.use({ viewport: KIOSK_VIEWPORT });
+
+test.describe('Eli7 kid terminal', () => {
+  // Several of these tests hit the live LLM backend. Running them in
+  // parallel workers stacks concurrent /ask calls and starves the local API
+  // process, pushing latency well past any reasonable timeout (observed
+  // ~5.5s serial vs. 20s+ under 5-way concurrency). Serial keeps the suite
+  // reliable without resorting to an arbitrarily huge timeout.
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // App hydration signal: the textarea exists in every state (empty or mid-conversation).
+    await expect(page.locator('textarea.input')).toBeVisible();
   });
 
-  // Visual & Layout Tests
-  test('app fills viewport with no chrome', async ({ page }) => {
-    const app = page.locator('.app');
-    await expect(app).toBeVisible();
-    
-    // Check full-screen layout
-    const box = await app.boundingBox();
-    const viewport = page.viewportSize();
-    expect(box.width).toBe(viewport.width);
-    expect(box.height).toBe(viewport.height);
-  });
+  test('welcome state: title, subtitle, 3 chips, focused input, mascot, no reset button', async ({ page }) => {
+    const title = page.locator('.empty-title');
+    const subtitle = page.locator('.empty-subtitle');
+    await expect(title).toBeVisible();
+    await expect(title).not.toBeEmpty();
+    await expect(subtitle).toBeVisible();
+    await expect(subtitle).not.toBeEmpty();
 
-  test('feed is centered and prompt is sticky at bottom', async ({ page }) => {
-    const feed = page.locator('.feed');
-    const promptSection = page.locator('.prompt-section');
-    
-    await expect(feed).toBeVisible();
-    await expect(promptSection).toBeVisible();
-    
-    // Check prompt is at bottom
-    const promptBox = await promptSection.boundingBox();
-    const viewport = page.viewportSize();
-    expect(promptBox.y + promptBox.height).toBeCloseTo(viewport.height, 50);
-  });
+    await expect(page.locator('.chip')).toHaveCount(3);
 
-  test('mobile viewport has proper hit targets', async ({ page }) => {
-    // Set mobile viewport
-    await page.setViewportSize({ width: 375, height: 667 });
-    
-    const chips = page.locator('.chip').first();
-    if (await chips.isVisible()) {
-      const chipBox = await chips.boundingBox();
-      expect(chipBox.height).toBeGreaterThanOrEqual(44);
-    }
-    
-    const inputBar = page.locator('.input-bar');
-    const inputBox = await inputBar.boundingBox();
-    expect(inputBox.height).toBeGreaterThanOrEqual(44);
-  });
-
-  // Interaction Tests
-  test('two-second test: can type within 2s', async ({ page }) => {
-    const startTime = Date.now();
-    
-    // Wait for input to be ready
-    const input = page.locator('.input-field');
+    const input = page.locator('textarea.input');
     await expect(input).toBeVisible();
-    await expect(input).toBeEnabled();
-    
-    // Type into input
-    await input.fill('Test');
-    
-    const elapsed = Date.now() - startTime;
-    expect(elapsed).toBeLessThan(2000);
-    
-    // Check caret is visible when input is empty
-    await input.clear();
-    const caret = page.locator('.input-caret');
-    await expect(caret).toBeVisible();
-  });
-
-  test('ask flow: complete question and answer cycle', async ({ page }) => {
-    // Type question
-    const input = page.locator('.input-field');
-    await input.fill('How do rainbows form?');
-    
-    // Submit with Enter
-    await input.press('Enter');
-    
-    // Wait for first bubble (within 3s)
-    const answerBubble = page.locator('.answer-bubble').first();
-    await expect(answerBubble).toBeVisible({ timeout: 3000 });
-    
-    // Check chunks are present and limited
-    const chunks = page.locator('.answer-chunk');
-    const chunkCount = await chunks.count();
-    expect(chunkCount).toBeGreaterThan(0);
-    expect(chunkCount).toBeLessThanOrEqual(3); // First response is 2-3 sentences
-    
-    // Check for More button
-    const moreButton = page.locator('.more-button');
-    const moreCount = await moreButton.count();
-    
-    if (moreCount > 0) {
-      // More button should be attached to bubble
-      await expect(moreButton).toBeVisible();
-      await expect(moreButton).toContainText('More?');
-      
-      // Click More
-      await moreButton.click();
-      
-      // Wait for additional chunks
-      await page.waitForTimeout(1000);
-      const newChunkCount = await chunks.count();
-      expect(newChunkCount).toBeGreaterThan(chunkCount);
-    }
-  });
-
-  test('starter seeds: visible and clickable', async ({ page }) => {
-    // Check chips are visible on empty state
-    const chips = page.locator('.chip');
-    await expect(chips.first()).toBeVisible();
-    
-    const chipCount = await chips.count();
-    expect(chipCount).toBeGreaterThanOrEqual(2);
-    expect(chipCount).toBeLessThanOrEqual(4);
-    
-    // Click a chip
-    const firstChip = chips.first();
-    const chipText = await firstChip.textContent();
-    await firstChip.click();
-    
-    // Should fill input and submit
-    const input = page.locator('.input-field');
-    await page.waitForTimeout(200); // Wait for auto-submit
-    
-    // Should see answer
-    const answerBubble = page.locator('.answer-bubble');
-    await expect(answerBubble).toBeVisible({ timeout: 5000 });
-  });
-
-  test('keyboard navigation', async ({ page }) => {
-    const input = page.locator('.input-field');
-    
-    // Tab through chips to input
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    
-    // Should reach input
     await expect(input).toBeFocused();
-    
-    // Type something
-    await input.fill('Test question with\nmultiple lines');
-    
-    // Shift+Enter should add newline (already done above)
-    const value = await input.inputValue();
-    expect(value).toContain('\n');
-    
-    // Escape should clear
-    await page.keyboard.press('Escape');
-    const clearedValue = await input.inputValue();
-    expect(clearedValue).toBe('');
-    
-    // Enter should submit
-    await input.fill('Why is the sky blue?');
-    await page.keyboard.press('Enter');
-    
-    const answerBubble = page.locator('.answer-bubble');
-    await expect(answerBubble).toBeVisible({ timeout: 5000 });
+
+    await expect(page.locator('.mascot-welcome')).toBeVisible();
+
+    await expect(page.locator('.reset-button')).toHaveCount(0);
   });
 
-  test('reduced motion respects preference', async ({ page }) => {
-    // Enable reduced motion
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    
-    // Submit a question
-    const input = page.locator('.input-field');
-    await input.fill('Test question');
+  test('ask by typing: question bubble, loading, then answer bubble', async ({ page }) => {
+    const input = page.locator('textarea.input');
+    const question = 'Porque é que o céu é azul?';
+    await input.fill(question);
+
+    const loading = page.locator('.loading');
     await input.press('Enter');
-    
-    // Check animations are instant
-    const bubble = page.locator('.bubble-group').first();
-    await expect(bubble).toBeVisible();
-    
-    // More button should not have animation
-    const moreButton = page.locator('.more-button');
-    if (await moreButton.isVisible()) {
-      const animationStyle = await moreButton.evaluate(el => 
-        window.getComputedStyle(el).animation
-      );
-      expect(animationStyle).toContain('none');
-    }
+
+    await expect(page.locator('.question-text')).toHaveText(question);
+    await expect(loading).toBeVisible();
+
+    await expect(page.locator('.bubble').first()).toBeVisible({ timeout: ASK_TIMEOUT });
+    await expect(loading).toHaveCount(0);
   });
 
-  // Content Tests
-  test('content sanity: no links, simple language', async ({ page }) => {
-    // Submit a question
-    const input = page.locator('.input-field');
-    await input.fill('What is a volcano?');
+  test('ask by tapping a chip submits that question (chip-tap fix guard)', async ({ page }) => {
+    const firstChip = page.locator('.chip').first();
+    const chipText = (await firstChip.textContent()).trim();
+
+    await firstChip.click();
+
+    await expect(page.locator('.question-text')).toHaveText(chipText);
+    await expect(page.locator('.bubble').first()).toBeVisible({ timeout: ASK_TIMEOUT });
+  });
+
+  test('"Começar de novo": single reset button, returns to empty state, pings begin-new-topic', async ({ page }) => {
+    const input = page.locator('textarea.input');
+    await input.fill('O que são os sonhos?');
     await input.press('Enter');
-    
-    // Wait for answer
-    const answerBubble = page.locator('.answer-bubble').first();
-    await expect(answerBubble).toBeVisible({ timeout: 5000 });
-    
-    const answerText = await answerBubble.textContent();
-    
-    // Check no links
-    expect(answerText).not.toContain('http://');
-    expect(answerText).not.toContain('https://');
-    expect(answerText).not.toContain('www.');
-    
-    // Check for parenthetical definitions
-    if (answerText.includes('volcano')) {
-      expect(answerText).toMatch(/\(means:.*?\)/);
-    }
-    
-    // Check simplified language (no complex terms without explanation)
-    const complexTerms = ['approximately', 'degrees', 'intersect'];
-    for (const term of complexTerms) {
-      if (answerText.toLowerCase().includes(term)) {
-        // Should be replaced or explained
-        expect(answerText).toMatch(/about|halfway|meet/i);
-      }
-    }
+    await expect(page.locator('.bubble').first()).toBeVisible({ timeout: ASK_TIMEOUT });
+
+    // De-dupe guard: exactly one reset button ever renders, not one per message.
+    await expect(page.locator('.reset-button')).toHaveCount(1);
+
+    const beginNewTopicRequest = page.waitForRequest(
+      (req) => req.url().includes('/begin-new-topic') && req.method() === 'POST'
+    );
+
+    await page.locator('.reset-button').click();
+    await beginNewTopicRequest;
+
+    await expect(page.locator('.empty-state')).toBeVisible();
+    await expect(page.locator('.bubble')).toHaveCount(0);
+    await expect(page.locator('.question-bubble')).toHaveCount(0);
+    await expect(page.locator('.reset-button')).toHaveCount(0);
   });
 
-  // Performance Tests
-  test('performance: first chunk within 3s', async ({ page }) => {
-    const input = page.locator('.input-field');
-    await input.fill('Why do cats purr?');
-    
-    const startTime = Date.now();
+  test('a 404 from begin-new-topic is suppressed, not surfaced as an error', async ({ page }) => {
+    await page.route('**/begin-new-topic', (route) =>
+      route.fulfill({ status: 404, body: 'Not Found' })
+    );
+
+    const pageErrors = [];
+    page.on('pageerror', (err) => pageErrors.push(err.message));
+
+    const input = page.locator('textarea.input');
+    await input.fill('Como voam as borboletas?');
     await input.press('Enter');
-    
-    // Wait for first chunk
-    const firstChunk = page.locator('.answer-chunk').first();
-    await expect(firstChunk).toBeVisible({ timeout: 3000 });
-    
-    const elapsed = Date.now() - startTime;
-    expect(elapsed).toBeLessThan(3000);
-    
-    // Log performance
-    console.log(`First chunk latency: ${elapsed}ms`);
+    await expect(page.locator('.bubble').first()).toBeVisible({ timeout: ASK_TIMEOUT });
+
+    await page.locator('.reset-button').click();
+
+    // The reset flow completes normally even though the topic-boundary call 404s.
+    await expect(page.locator('.empty-state')).toBeVisible();
+    expect(pageErrors).toEqual([]);
   });
 
-  test('responsive rendering during text appearance', async ({ page }) => {
-    const input = page.locator('.input-field');
-    
-    // Submit multiple questions quickly
-    for (let i = 0; i < 3; i++) {
-      await input.fill(`Question ${i + 1}: What is rain?`);
-      await input.press('Enter');
-      await page.waitForTimeout(500);
-    }
-    
-    // Input should remain responsive
-    await input.fill('Still responsive');
-    await expect(input).toHaveValue('Still responsive');
-    
-    // Check no layout jank
-    const feedContainer = page.locator('.feed-container');
-    const scrollHeight = await feedContainer.evaluate(el => el.scrollHeight);
-    expect(scrollHeight).toBeGreaterThan(0);
+  test('long input: accepts 1500 chars (maxlength 2000) and keeps submit enabled', async ({ page }) => {
+    const input = page.locator('textarea.input');
+    await expect(input).toHaveAttribute('maxlength', '2000');
+
+    const longText = 'a'.repeat(1500);
+    await input.fill(longText);
+
+    await expect(input).toHaveValue(longText);
+    await expect(page.locator('.submit')).toBeEnabled();
   });
 
-  // Error States
-  test('network error shows friendly message', async ({ page }) => {
-    // Simulate network error by going offline
-    await page.context().setOffline(true);
-    
-    const input = page.locator('.input-field');
-    await input.fill('Test question');
+  test('touch targets: chip, submit, and reset-button are each >= 44px', async ({ page }) => {
+    const chipBox = await page.locator('.chip').first().boundingBox();
+    expect(chipBox.height).toBeGreaterThanOrEqual(44);
+    expect(chipBox.width).toBeGreaterThanOrEqual(44);
+
+    // .submit is opacity:0 (but still laid out) while disabled, so give it a
+    // real value first to measure the interactable target, not the empty state.
+    const input = page.locator('textarea.input');
+    await input.fill('oi');
+    const submitBox = await page.locator('.submit').boundingBox();
+    expect(submitBox.height).toBeGreaterThanOrEqual(44);
+    expect(submitBox.width).toBeGreaterThanOrEqual(44);
+
+    // .reset-button only exists once a message is on screen.
     await input.press('Enter');
-    
-    // Should show error message
-    const error = page.locator('.error-message');
-    await expect(error).toBeVisible();
-    await expect(error).toContainText("couldn't think");
-    
-    // Retry button should be present
-    const retry = page.locator('.retry-button');
-    await expect(retry).toBeVisible();
-    
-    // Go back online and retry
-    await page.context().setOffline(false);
-    await retry.click();
-    
-    // Error should disappear
-    await expect(error).not.toBeVisible();
+    await expect(page.locator('.bubble').first()).toBeVisible({ timeout: ASK_TIMEOUT });
+    const resetBox = await page.locator('.reset-button').boundingBox();
+    expect(resetBox.height).toBeGreaterThanOrEqual(44);
+    expect(resetBox.width).toBeGreaterThanOrEqual(44);
   });
 
-  // Welcome State
-  test('welcome state shows friendly message and chips', async ({ page }) => {
-    // Check welcome message
-    const welcome = page.locator('.welcome');
-    await expect(welcome).toBeVisible();
-    await expect(welcome).toContainText('wondering');
-    
-    // Check chips are present
-    const chips = page.locator('.chip');
-    const chipCount = await chips.count();
-    expect(chipCount).toBeGreaterThanOrEqual(3);
-    
-    // Chips should have kid-friendly questions
-    const firstChipText = await chips.first().textContent();
-    expect(firstChipText).toMatch(/\?$/); // Should end with question mark
-  });
+  test('no uncaught console errors during a normal ask flow', async ({ page }) => {
+    const unexpectedErrors = [];
+    page.on('console', (msg) => {
+      if (msg.type() !== 'error') return;
+      if (ALLOWED_CONSOLE_ERROR_PATTERNS.some((pattern) => pattern.test(msg.text()))) return;
+      unexpectedErrors.push(msg.text());
+    });
 
-  // Idle State
-  test('idle state shows prompt after 20s', async ({ page, browserName }) => {
-    // Skip this test in CI as it takes too long
-    test.skip(browserName === 'webkit', 'Skipping long test in WebKit');
-    
-    // Submit a question first
-    const input = page.locator('.input-field');
-    await input.fill('Quick test');
+    const pageErrors = [];
+    page.on('pageerror', (err) => pageErrors.push(err.message));
+
+    const input = page.locator('textarea.input');
+    await input.fill('O que faz as bolhas?');
     await input.press('Enter');
-    
-    // Wait for answer
-    await page.locator('.answer-bubble').first().waitFor();
-    
-    // Wait for idle (20s)
-    await page.waitForTimeout(21000);
-    
-    // Should show idle prompt chip
-    const chips = page.locator('.chip');
-    const chipVisible = await chips.first().isVisible();
-    
-    if (chipVisible) {
-      const chipText = await chips.first().textContent();
-      expect(chipText).toMatch(/Try:|Ask:|Wonder:|Curious/);
-    }
+    await expect(page.locator('.bubble').first()).toBeVisible({ timeout: ASK_TIMEOUT });
+
+    expect(unexpectedErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
   });
 });

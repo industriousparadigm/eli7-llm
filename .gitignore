@@ -71,6 +71,8 @@ ollama-data/
 /logs/
 *.jsonl
 transcripts/
+api/suggestions/generated_pool.json
+api/suggestions/cron.log
 
 # Testing
 coverage/

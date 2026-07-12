@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eli7 — Comeau Playground</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800;900&display=swap">
+<style>
+  :root{
+    --teal:#16B8A6;
+    --teal-dark:#0E8C7F;
+    --teal-tint:#E3FBF6;
+    --pink:#F2568C;
+    --pink-dark:#D6396E;
+    --pink-tint:#FDE6EF;
+    --purple:#8B5FD9;
+    --purple-dark:#6A3FB5;
+    --purple-tint:#EFE7FB;
+    --cream:#FFFBF3;
+    --ink:#2E2A45;
+    --muted:#8D86A3;
+    --spring:cubic-bezier(.34,1.56,.64,1);
+    --shadow-sm:0 1px 2px rgba(46,42,69,.06), 0 2px 5px rgba(46,42,69,.05);
+    --shadow-md:0 2px 4px rgba(46,42,69,.04), 0 6px 12px rgba(46,42,69,.06), 0 16px 26px rgba(46,42,69,.07);
+    --shadow-lg:0 2px 4px rgba(46,42,69,.03), 0 10px 18px rgba(46,42,69,.05), 0 28px 46px rgba(46,42,69,.08), 0 56px 90px rgba(46,42,69,.10);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(circle at 50% -10%, #F7F2FC 0%, #EFEAE0 55%, #E9E4D8 100%);
+    font-family:'Nunito',sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .page{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:64px;
+    padding:56px 40px 110px;
+    min-width:1140px;
+  }
+
+  .page-head{
+    text-align:center;
+    margin-bottom:-8px;
+  }
+  .page-head h1{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:26px;
+    margin:0 0 6px;
+    letter-spacing:.01em;
+  }
+  .page-head p{
+    margin:0;
+    font-size:14px;
+    color:var(--muted);
+    font-weight:600;
+  }
+
+  .frame-block{display:flex;flex-direction:column;align-items:flex-start;}
+  .caption{
+    font-family:'Nunito',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 14px 6px;
+  }
+
+  .frame{
+    position:relative;
+    width:1024px;
+    height:600px;
+    border-radius:36px;
+    background:var(--cream);
+    overflow:hidden;
+    box-shadow:var(--shadow-lg);
+    flex-shrink:0;
+  }
+
+  /* ---------- decorative blobs ---------- */
+  .blob{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(58px);
+    opacity:.42;
+    z-index:0;
+    pointer-events:none;
+    animation:floatY 10s ease-in-out infinite alternate;
+  }
+  .blob-teal{background:radial-gradient(circle at 35% 32%, #7FF0E1, var(--teal));}
+  .blob-pink{background:radial-gradient(circle at 35% 32%, #FCC1DA, var(--pink));}
+  .blob-purple{background:radial-gradient(circle at 35% 32%, #D3BEF5, var(--purple));}
+  .pos-1{width:440px;height:440px;top:-160px;right:-140px;}
+  .pos-2{width:380px;height:380px;bottom:-160px;left:-140px;animation-delay:.6s;}
+  .pos-3{width:300px;height:300px;top:-110px;left:-90px;animation-delay:1.1s;}
+  .pos-4{width:300px;height:300px;bottom:-130px;right:-100px;animation-delay:.3s;}
+
+  @keyframes floatY{0%{transform:translateY(0) scale(1);}100%{transform:translateY(-18px) scale(1.05);}}
+
+  /* ---------- sparkles ---------- */
+  .sparkle{position:absolute;z-index:0;pointer-events:none;animation:twinkle 3.4s ease-in-out infinite;}
+  .sparkle use, .sparkle path{fill:currentColor;}
+  .c-teal{color:var(--teal);}
+  .c-pink{color:var(--pink);}
+  .c-purple{color:var(--purple);}
+  .spk-1{top:14px;left:996px;width:20px;height:19px;animation-delay:0s;}
+  .spk-2{top:12px;left:12px;width:16px;height:15px;animation-delay:.5s;}
+  .spk-3{top:566px;left:1000px;width:18px;height:17px;animation-delay:1s;}
+  .spk-4{top:520px;left:14px;width:22px;height:21px;animation-delay:1.4s;}
+  .spk-5{top:260px;left:8px;width:14px;height:13px;animation-delay:1.9s;}
+  .spk-6{top:230px;left:1002px;width:18px;height:17px;animation-delay:2.3s;}
+
+  @keyframes twinkle{
+    0%,100%{opacity:.3;transform:scale(.75) rotate(0deg);}
+    50%{opacity:1;transform:scale(1.2) rotate(14deg);}
+  }
+
+  @keyframes bob{
+    0%,100%{transform:translateY(0) rotate(-3deg);}
+    50%{transform:translateY(-7px) rotate(3deg);}
+  }
+
+  @keyframes dotBounce{
+    0%,80%,100%{transform:translateY(0);opacity:.45;}
+    40%{transform:translateY(-11px);opacity:1;}
+  }
+
+  /* ---------- layout shell ---------- */
+  .frame-inner{
+    position:relative;
+    z-index:1;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    padding:40px 56px;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-shrink:0;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand svg{width:36px;height:36px;filter:drop-shadow(0 3px 6px rgba(139,95,217,.28));}
+  .brand-name{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:23px;
+    color:var(--ink);
+    letter-spacing:.01em;
+  }
+
+  .new-chat{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border:2px solid var(--teal-tint);
+    background:#fff;
+    color:var(--teal-dark);
+    font-family:'Nunito',sans-serif;
+    font-weight:800;
+    font-size:15px;
+    padding:11px 20px;
+    border-radius:999px;
+    box-shadow:var(--shadow-sm);
+    cursor:pointer;
+    transition:transform .22s var(--spring), box-shadow .22s ease, border-color .22s ease;
+  }
+  .new-chat:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--teal);}
+  .new-chat:active{transform:translateY(0) scale(.97);}
+
+  /* ---------- welcome hero ---------- */
+  .hero{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:26px;
+    text-align:center;
+  }
+  .title{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:50px;
+    line-height:1.16;
+    margin:0;
+    max-width:640px;
+    color:var(--ink);
+  }
+  .grad-text{
+    background-image:linear-gradient(120deg, var(--teal) 0%, var(--pink) 52%, var(--purple) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .subtitle{
+    font-weight:700;
+    font-size:21px;
+    color:var(--muted);
+    margin:0;
+    max-width:520px;
+  }
+
+  .chips{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:14px 16px;
+    max-width:760px;
+    margin-top:4px;
+  }
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    border:none;
+    background:#fff;
+    color:var(--ink);
+    font-family:'Nunito',sans-serif;
+    font-weight:700;
+    font-size:17px;
+    padding:15px 22px;
+    border-radius:999px;
+    cursor:pointer;
+    box-shadow:var(--shadow-sm);
+    transition:transform .25s var(--spring), box-shadow .25s ease;
+    min-height:44px;
+  }
+  .chip .emoji{font-size:20px;}
+  .chip.teal:hover{box-shadow:0 12px 22px rgba(22,184,166,.28), var(--shadow-sm);}
+  .chip.pink:hover{box-shadow:0 12px 22px rgba(242,86,140,.28), var(--shadow-sm);}
+  .chip.purple:hover{box-shadow:0 12px 22px rgba(139,95,217,.28), var(--shadow-sm);}
+  .chip:hover{transform:translateY(-4px) rotate(-.6deg);}
+  .chip:active{transform:translateY(-1px) scale(.97);}
+
+  /* ---------- input bar ---------- */
+  .input-bar{
+    position:absolute;
+    left:56px;
+    right:56px;
+    bottom:40px;
+    height:68px;
+    background:#fff;
+    border-radius:999px;
+    display:flex;
+    align-items:center;
+    padding:6px 6px 6px 28px;
+    gap:14px;
+    box-shadow:var(--shadow-md);
+  }
+  .input-placeholder{
+    flex:1;
+    font-size:19px;
+    font-weight:700;
+    color:var(--muted);
+  }
+  .send-btn{
+    width:56px;
+    height:56px;
+    flex-shrink:0;
+    border:none;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--teal), var(--purple));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 10px 22px rgba(139,95,217,.38), 0 4px 8px rgba(22,184,166,.25);
+    transition:transform .25s var(--spring), box-shadow .25s ease;
+  }
+  .send-btn svg{width:24px;height:24px;}
+  .send-btn:hover{transform:translateY(-2px) scale(1.05);}
+  .send-btn:active{transform:scale(.94);}
+
+  /* ---------- conversation ---------- */
+  .conversation{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    padding-top:26px;
+    min-height:0;
+  }
+  .bubble{
+    border-radius:26px 26px 6px 26px;
+    padding:16px 24px;
+    font-weight:700;
+    font-size:20px;
+    line-height:1.4;
+  }
+  .bubble--question{
+    align-self:flex-end;
+    max-width:62%;
+    background:linear-gradient(120deg, var(--pink-tint), var(--purple-tint));
+    color:var(--ink);
+    box-shadow:var(--shadow-sm);
+  }
+
+  .answer-row{
+    display:flex;
+    align-items:flex-start;
+    gap:16px;
+    margin-top:22px;
+  }
+  .avatar{
+    flex-shrink:0;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:var(--shadow-sm);
+  }
+  .avatar svg{width:42px;height:42px;}
+  .avatar--bounce svg{animation:bob 2.6s ease-in-out infinite;}
+
+  .bubble--answer{
+    border-radius:8px 26px 26px 26px;
+    background:#fff;
+    max-width:700px;
+    padding:22px 28px;
+    box-shadow:var(--shadow-md);
+    font-weight:600;
+  }
+  .greet{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:19px;
+    color:var(--purple-dark);
+    margin:0 0 10px;
+  }
+  .bubble--answer p{
+    font-size:17px;
+    line-height:1.5;
+    color:var(--ink);
+    margin:0 0 10px;
+  }
+  .fact-list{
+    list-style:none;
+    margin:12px 0 0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+  }
+  .fact-list li{
+    position:relative;
+    padding-left:26px;
+    font-size:16.5px;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.4;
+  }
+  .fact-list li::before{
+    content:"★";
+    position:absolute;
+    left:0;
+    top:1px;
+    font-size:14px;
+    color:var(--teal);
+  }
+  .fact-list li:nth-child(2)::before{color:var(--pink);}
+  .fact-list li:nth-child(3)::before{color:var(--purple);}
+
+  /* ---------- thinking ---------- */
+  .thinking-wrap{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .thinking-row{
+    display:flex;
+    align-items:center;
+    gap:20px;
+  }
+  .avatar--lg{width:76px;height:76px;}
+  .avatar--lg svg{width:54px;height:54px;}
+  .thinking-card{
+    background:#fff;
+    border-radius:8px 26px 26px 26px;
+    padding:22px 30px;
+    box-shadow:var(--shadow-md);
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .thinking-card p{
+    margin:0;
+    font-weight:700;
+    font-size:19px;
+    color:var(--ink);
+  }
+  .thinking-dots{display:flex;gap:9px;}
+  .thinking-dots span{
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    display:inline-block;
+    animation:dotBounce 1.2s ease-in-out infinite;
+  }
+  .thinking-dots span:nth-child(1){background:var(--teal);animation-delay:0s;}
+  .thinking-dots span:nth-child(2){background:var(--pink);animation-delay:.15s;}
+  .thinking-dots span:nth-child(3){background:var(--purple);animation-delay:.3s;}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
+  <defs>
+    <linearGradient id="lumaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22CFC0"/>
+      <stop offset="100%" stop-color="#8B5FD9"/>
+    </linearGradient>
+    <rect id="petal" x="39" y="7" width="22" height="47" rx="11"/>
+
+    <symbol id="luma" viewBox="0 0 100 100">
+      <use href="#petal" transform="rotate(0 50 50)" fill="url(#lumaGrad)"/>
+      <use href="#petal" transform="rotate(72 50 50)" fill="url(#lumaGrad)"/>
+      <use href="#petal" transform="rotate(144 50 50)" fill="url(#lumaGrad)"/>
+      <use href="#petal" transform="rotate(216 50 50)" fill="url(#lumaGrad)"/>
+      <use href="#petal" transform="rotate(288 50 50)" fill="url(#lumaGrad)"/>
+      <circle cx="50" cy="50" r="22" fill="url(#lumaGrad)"/>
+      <ellipse cx="42" cy="48" rx="6.2" ry="8.2" fill="#fff"/>
+      <ellipse cx="58" cy="48" rx="6.2" ry="8.2" fill="#fff"/>
+      <circle cx="43" cy="50.5" r="3.1" fill="#2E2A45"/>
+      <circle cx="59" cy="50.5" r="3.1" fill="#2E2A45"/>
+      <circle cx="44.6" cy="46.5" r="1.3" fill="#fff"/>
+      <circle cx="60.6" cy="46.5" r="1.3" fill="#fff"/>
+      <circle cx="35.5" cy="58" r="4" fill="#F2568C" opacity=".5"/>
+      <circle cx="64.5" cy="58" r="4" fill="#F2568C" opacity=".5"/>
+      <path d="M44 60 Q50 66 56 60" stroke="#2E2A45" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="sparkle" viewBox="0 0 22 21">
+      <path d="M11 1 L12.9 8.3 L20 10.4 L12.9 12.5 L11 19.8 L9.1 12.5 L2 10.4 L9.1 8.3 Z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="page">
+
+  <div class="page-head">
+    <h1>Eli7 <span style="color:var(--muted); font-weight:600;">·</span> Comeau Playground</h1>
+    <p>Protótipo de estilo visual · ecrã 1024 × 600</p>
+  </div>
+
+  <!-- ============ SCREEN 1 — WELCOME ============ -->
+  <div class="frame-block">
+    <div class="caption">1 · Boas-vindas / estado vazio</div>
+    <div class="frame">
+      <div class="blob blob-teal pos-1"></div>
+      <div class="blob blob-pink pos-2"></div>
+      <svg class="sparkle spk-1 c-pink"><use href="#sparkle"/></svg>
+      <svg class="sparkle spk-2 c-teal"><use href="#sparkle"/></svg>
+      <svg class="sparkle spk-3 c-purple"><use href="#sparkle"/></svg>
+      <svg class="sparkle spk-4 c-teal"><use href="#sparkle"/></svg>
+      <svg class="sparkle spk-5 c-pink"><use href="#sparkle"/></svg>
+      <svg class="sparkle spk-6 c-purple"><use href="#sparkle"/></svg>
+
+      <div class="frame-inner">
+        <div class="topbar">
+          <div class="brand"><svg><use href="#luma"/></svg><span class="brand-name">Eli7</span></div>
+        </div>
+
+        <div class="hero">
+          <h1 class="title">O que queres <span class="grad-text">descobrir</span> hoje?</h1>
+          <p class="subtitle">Pergunta-me o que quiseres. Adoro perguntas.</p>
+          <div class="chips">
+            <button class="chip teal">O que faz os trovões? <span class="emoji">⛈️</span></button>
+            <button class="chip pink">Porque é que as estrelas brilham? <span class="emoji">✨</span></button>
+            <button class="chip purple">Porque é que os gatos ronronam? <span class="emoji">🐱</span></button>
+          </div>
+        </div>
+
+        <div class="input-bar">
+          <span class="input-placeholder">Pergunta-me o que quiseres...</span>
+          <button class="send-btn" aria-label="Enviar pergunta">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 12 L20 4 L14 20 L11 13 L4 12 Z" fill="#fff"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 2 — CONVERSATION ============ -->
+  <div class="frame-block">
+    <div class="caption">2 · Conversa</div>
+    <div class="frame">
+      <div class="blob blob-purple pos-3"></div>
+      <div class="blob blob-teal pos-4"></div>
+      <svg class="sparkle spk-1 c-teal"><use href="#sparkle"/></svg>
+      <svg class="sparkle spk-2 c-purple"><use href="#sparkle"/></svg>
+      <svg class="sparkle spk-4 c-pink"><use href="#sparkle"/></svg>
+
+      <div class="frame-inner">
+        <div class="topbar">
+          <div class="brand"><svg><use href="#luma"/></svg><span class="brand-name">Eli7</span></div>
+          <button class="new-chat">Nova conversa <span>✨</span></button>
+        </div>
+
+        <div class="conversation">
+          <div class="bubble bubble--question">Porque é que o céu é azul?</div>
+
+          <div class="answer-row">
+            <div class="avatar"><svg><use href="#luma"/></svg></div>
+            <div class="bubble--answer">
+              <p class="greet">Olá, Diana! Que pergunta brilhante ✨</p>
+              <p>A luz do Sol parece branca, mas tem todas as cores do arco-íris escondidas lá dentro!</p>
+              <p>Quando essa luz chega ao céu, bate no ar e espalha-se para todos os lados. O azul é a cor que se espalha mais!</p>
+              <ul class="fact-list">
+                <li>A luz do Sol esconde todas as cores do arco-íris</li>
+                <li>O ar espalha a luz azul muito mais do que as outras cores</li>
+                <li>Por isso vemos um céu azul enorme por cima de nós</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-bar">
+          <span class="input-placeholder">Pergunta-me o que quiseres...</span>
+          <button class="send-btn" aria-label="Enviar pergunta">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 12 L20 4 L14 20 L11 13 L4 12 Z" fill="#fff"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 3 — THINKING / LOADING ============ -->
+  <div class="frame-block">
+    <div class="caption">3 · A pensar / a carregar</div>
+    <div class="frame">
+      <div class="blob blob-pink pos-1"></div>
+      <div class="blob blob-teal pos-2"></div>
+      <svg class="sparkle spk-1 c-purple"><use href="#sparkle"/></svg>
+      <svg class="sparkle spk-3 c-teal"><use href="#sparkle"/></svg>
+      <svg class="sparkle spk-5 c-pink"><use href="#sparkle"/></svg>
+      <svg class="sparkle spk-6 c-teal"><use href="#sparkle"/></svg>
+
+      <div class="frame-inner">
+        <div class="topbar">
+          <div class="brand"><svg><use href="#luma"/></svg><span class="brand-name">Eli7</span></div>
+        </div>
+
+        <div class="conversation">
+          <div class="bubble bubble--question">Porque é que o céu é azul?</div>
+
+          <div class="thinking-wrap">
+            <div class="thinking-row">
+              <div class="avatar avatar--lg avatar--bounce"><svg><use href="#luma"/></svg></div>
+              <div class="thinking-card">
+                <p>Eli7 está a pensar numa resposta brilhante...</p>
+                <div class="thinking-dots"><span></span><span></span><span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

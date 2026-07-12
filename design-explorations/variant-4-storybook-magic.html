@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eli7 · Storybook Magic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF1E2;
+    --card:#FFFDF7;
+    --ink:#4A3E52;
+    --heading:#5B3E8C;
+    --muted:#7A6C8E;
+    --teal:#2FA79B;
+    --teal-deep:#177E73;
+    --pink:#F2A0C6;
+    --pink-deep:#D8558F;
+    --pink-ink:#8A3D66;
+    --purple:#8F72C7;
+    --purple-deep:#6B4FA0;
+    --gold:#F3C55A;
+    --spring:cubic-bezier(.34,1.56,.64,1);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+
+  body{
+    background:radial-gradient(circle at 50% -10%, #FBF3E6 0%, #F3E7D3 55%, #ECDEC5 100%);
+    font-family:'Nunito',sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:56px 24px 100px;
+    min-width:1140px;
+  }
+
+  .page-header{text-align:center;margin-bottom:44px;max-width:640px;}
+  .page-header .eyebrow{
+    font:800 13px/1 'Nunito',sans-serif;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--pink-deep);
+    margin:0 0 8px;
+  }
+  .page-header h1{font:700 30px/1.2 'Baloo 2',sans-serif;color:var(--heading);margin:0;}
+  .page-header p{font:600 15px/1.5 'Nunito',sans-serif;color:var(--muted);margin:10px 0 0;}
+
+  .frame-block{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:60px;}
+  .frame-block:last-child{margin-bottom:0;}
+  .caption{
+    font:700 12px/1 'Nunito',sans-serif;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 14px 6px;
+  }
+
+  .frame{
+    position:relative;
+    width:1024px;
+    height:600px;
+    border-radius:36px;
+    overflow:hidden;
+    background:var(--paper);
+    box-shadow:
+      inset 0 0 0 1px rgba(91,62,140,.06),
+      0 1px 2px rgba(91,62,140,.05),
+      0 12px 22px -8px rgba(91,62,140,.14),
+      0 40px 70px -24px rgba(91,62,140,.26);
+    flex-shrink:0;
+  }
+
+  .scene-bg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+  .grain{position:absolute;inset:0;z-index:5;pointer-events:none;filter:url(#grain);opacity:.5;}
+
+  .frame-inner{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;padding:34px 52px;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .brand{display:flex;align-items:center;gap:9px;}
+  .brand-word{font:700 22px/1 'Baloo 2',sans-serif;color:var(--heading);}
+
+  .new-chat{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card);
+    border:2px solid var(--teal);
+    color:var(--teal-deep);
+    font:800 14px/1 'Nunito',sans-serif;
+    padding:11px 18px;
+    border-radius:999px;
+    min-height:44px;
+    box-shadow:0 8px 16px -8px rgba(23,126,115,.32);
+    cursor:pointer;
+    transition:transform .2s var(--spring);
+  }
+  .new-chat:hover{transform:translateY(-2px);}
+  .new-chat:active{transform:scale(.96);}
+
+  /* ---------- keyframes ---------- */
+  @keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+  @keyframes wave{0%,100%{transform:rotate(0deg);}50%{transform:rotate(-20deg);}}
+  @keyframes twinkle{0%,100%{opacity:.3;transform:scale(.8);}50%{opacity:1;transform:scale(1.15);}}
+  @keyframes bounceDot{0%,80%,100%{transform:translateY(0);}40%{transform:translateY(-9px);}}
+  @keyframes spinSlow{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  @keyframes breathe{0%{transform:scale(1);opacity:.6;}100%{transform:scale(1.45);opacity:0;}}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;}
+  }
+
+  .m-float{animation:floatY 3.4s ease-in-out infinite;}
+  .m-arm{animation:wave 1.9s ease-in-out infinite;}
+  .m-orbit{animation:spinSlow 5.5s linear infinite;}
+  .tw{transform-box:fill-box;transform-origin:center;animation:twinkle 2.8s ease-in-out infinite;}
+
+  /* ---------- welcome hero ---------- */
+  .hero{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    text-align:center;
+    padding-bottom:96px;
+  }
+  .title{
+    font:700 44px/1.18 'Baloo 2',sans-serif;
+    color:var(--heading);
+    margin:8px 0 0;
+    max-width:700px;
+    text-shadow:2px 3px 0 rgba(242,160,198,.32);
+  }
+  .title .hi{color:var(--pink-deep);}
+  .subtitle{font:700 19px/1.5 'Nunito',sans-serif;color:var(--muted);margin:0;max-width:520px;}
+
+  .chips{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;max-width:860px;margin-top:8px;}
+  .chip{
+    --r:0deg;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    min-height:44px;
+    padding:15px 22px;
+    border-radius:999px;
+    background:var(--card);
+    font:800 16px/1 'Nunito',sans-serif;
+    cursor:pointer;
+    border:2px solid transparent;
+    box-shadow:0 10px 20px -8px rgba(91,62,140,.22),0 2px 4px rgba(91,62,140,.08);
+    transform:rotate(var(--r));
+    transition:transform .2s var(--spring), box-shadow .2s ease;
+  }
+  .chip:hover{transform:rotate(var(--r)) translateY(-3px);}
+  .chip:active{transform:rotate(var(--r)) scale(.96);}
+  .chip:nth-child(1){--r:-1deg;border-color:var(--teal);color:var(--teal-deep);}
+  .chip:nth-child(2){--r:.7deg;border-color:var(--pink);color:var(--pink-deep);}
+  .chip:nth-child(3){--r:-.5deg;border-color:var(--purple);color:var(--purple-deep);}
+
+  /* ---------- input bar ---------- */
+  .input-bar{position:absolute;left:52px;right:52px;bottom:36px;height:68px;z-index:3;}
+  .input-pill{
+    height:100%;
+    background:var(--card);
+    border-radius:999px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 8px 0 28px;
+    box-shadow:0 18px 34px -12px rgba(91,62,140,.28),0 2px 6px rgba(91,62,140,.1);
+  }
+  .input-placeholder{font:700 18px/1 'Nunito',sans-serif;color:var(--muted);}
+  .send-btn{
+    position:relative;
+    width:52px;
+    height:52px;
+    min-width:44px;
+    min-height:44px;
+    border-radius:50%;
+    background:var(--pink-deep);
+    border:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 8px 16px -4px rgba(216,85,143,.5);
+    transition:transform .2s var(--spring);
+  }
+  .send-btn:hover{transform:translateY(-2px) scale(1.04);}
+  .send-btn:active{transform:scale(.94);}
+  .send-btn svg{width:20px;height:20px;position:relative;z-index:1;}
+  .send-ring{position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--pink-deep);animation:breathe 2.6s ease-out infinite;}
+
+  /* ---------- conversation ---------- */
+  .conversation{flex:1;display:flex;flex-direction:column;padding-top:8px;min-height:0;}
+  .q-row{display:flex;justify-content:flex-end;}
+  .q-bubble{
+    max-width:520px;
+    background:#FCE3EF;
+    color:var(--pink-ink);
+    font:700 19px/1.4 'Nunito',sans-serif;
+    padding:15px 22px;
+    border-radius:22px 22px 6px 22px;
+    box-shadow:0 10px 18px -8px rgba(216,85,143,.22);
+  }
+
+  .answer-row{display:flex;align-items:flex-start;gap:14px;margin-top:20px;}
+  .avatar-badge{
+    flex-shrink:0;
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    background:var(--card);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 8px 16px -6px rgba(91,62,140,.3);
+  }
+  .avatar-badge svg{width:40px;height:40px;display:block;}
+  .avatar-badge--lg{width:96px;height:96px;}
+  .avatar-badge--lg svg{width:74px;height:74px;}
+
+  .answer-card{
+    flex:1;
+    max-width:720px;
+    background:var(--card);
+    border-radius:8px 26px 26px 26px;
+    padding:26px 30px;
+    box-shadow:0 16px 32px -12px rgba(91,62,140,.22);
+  }
+  .answer-card p{font:600 18.5px/1.5 'Nunito',sans-serif;color:var(--ink);margin:0 0 12px;}
+  .answer-card p:last-of-type{margin-bottom:0;}
+  .bullets{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;}
+  .bullets li{font:600 18px/1.4 'Nunito',sans-serif;color:var(--ink);}
+
+  /* ---------- thinking ---------- */
+  .thinking-wrap{flex:1;display:flex;align-items:center;justify-content:center;}
+  .thinking-row{display:flex;align-items:center;gap:22px;}
+  .thinking-card{
+    background:var(--card);
+    border-radius:8px 26px 26px 26px;
+    padding:24px 30px;
+    box-shadow:0 16px 32px -12px rgba(91,62,140,.22);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .thinking-card p{margin:0;font:700 18px/1.4 'Nunito',sans-serif;color:var(--ink);}
+  .dots{display:flex;gap:9px;}
+  .dots span{width:12px;height:12px;border-radius:50%;display:block;animation:bounceDot 1.2s ease-in-out infinite;}
+  .dots span:nth-child(1){background:var(--teal);}
+  .dots span:nth-child(2){background:var(--pink-deep);animation-delay:.15s;}
+  .dots span:nth-child(3){background:var(--purple);animation-delay:.3s;}
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <defs>
+    <filter id="grain" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0"/>
+    </filter>
+    <symbol id="sparkle" viewBox="0 0 22 21">
+      <path d="M11 1 L12.9 8.3 L20 10.4 L12.9 12.5 L11 19.8 L9.1 12.5 L2 10.4 L9.1 8.3 Z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="page-header">
+  <p class="eyebrow">Eli7 · protótipo visual</p>
+  <h1>Storybook Magic</h1>
+  <p>Um livro de histórias vivo: colinas pintadas, papel quente e uma estrelinha amiga que conta segredos sobre o mundo.</p>
+</div>
+
+<!-- ============ SCREEN 1 — WELCOME / EMPTY STATE ============ -->
+<div class="frame-block">
+  <p class="caption">1. Bem-vinda (estado vazio)</p>
+  <div class="frame">
+    <svg class="scene-bg" viewBox="0 0 1024 600" preserveAspectRatio="none" aria-hidden="true">
+      <use href="#sparkle" x="60" y="34" width="18" height="17" fill="#F2A0C6" class="tw" style="animation-delay:0s"/>
+      <use href="#sparkle" x="168" y="82" width="12" height="11" fill="#2FA79B" class="tw" style="animation-delay:.5s"/>
+      <use href="#sparkle" x="300" y="30" width="20" height="19" fill="#8F72C7" class="tw" style="animation-delay:1s"/>
+      <use href="#sparkle" x="458" y="70" width="14" height="13" fill="#F3C55A" class="tw" style="animation-delay:1.4s"/>
+      <use href="#sparkle" x="616" y="38" width="16" height="15" fill="#F2A0C6" class="tw" style="animation-delay:.3s"/>
+      <use href="#sparkle" x="758" y="90" width="12" height="11" fill="#2FA79B" class="tw" style="animation-delay:1.8s"/>
+      <use href="#sparkle" x="880" y="46" width="20" height="19" fill="#8F72C7" class="tw" style="animation-delay:.8s"/>
+      <use href="#sparkle" x="946" y="112" width="14" height="13" fill="#F2A0C6" class="tw" style="animation-delay:1.2s"/>
+      <use href="#sparkle" x="34" y="168" width="10" height="9" fill="#2FA79B" class="tw" style="animation-delay:1.6s"/>
+      <use href="#sparkle" x="978" y="200" width="16" height="15" fill="#8F72C7" class="tw" style="animation-delay:.2s"/>
+      <path d="M0,410 C160,362 320,396 480,380 C620,366 760,402 900,384 C960,376 1000,392 1024,386 L1024,600 L0,600 Z" fill="#D9F0E9"/>
+      <path d="M0,452 C180,412 340,436 500,422 C640,410 760,444 900,426 C960,416 1000,432 1024,426 L1024,600 L0,600 Z" fill="#FBDCEA"/>
+      <path d="M0,488 C200,458 360,472 520,460 C660,450 780,480 920,464 C970,457 1000,468 1024,464 L1024,600 L0,600 Z" fill="#AB8FD2"/>
+      <circle cx="130" cy="474" r="4" fill="#fff" opacity=".6"/>
+      <circle cx="240" cy="466" r="3" fill="#fff" opacity=".5"/>
+      <circle cx="420" cy="468" r="4" fill="#fff" opacity=".55"/>
+      <circle cx="600" cy="472" r="3" fill="#fff" opacity=".5"/>
+      <circle cx="760" cy="467" r="4" fill="#fff" opacity=".55"/>
+      <circle cx="900" cy="472" r="3" fill="#fff" opacity=".5"/>
+    </svg>
+    <div class="grain"></div>
+
+    <div class="frame-inner">
+      <div class="topbar">
+        <div class="brand">
+          <svg viewBox="0 0 22 21" width="24" height="23" fill="#F3C55A" aria-hidden="true"><use href="#sparkle"/></svg>
+          <span class="brand-word">Eli7</span>
+        </div>
+      </div>
+
+      <div class="hero">
+        <svg class="m-float" width="116" height="116" viewBox="0 0 120 120" aria-hidden="true">
+          <g transform="translate(60,64)">
+            <g fill="#6B4FA0" transform="translate(3,4)">
+              <circle r="30"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+            </g>
+            <g fill="#8F72C7">
+              <circle r="30"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+            </g>
+            <ellipse cx="-12" cy="-14" rx="16" ry="11" fill="#fff" opacity=".22"/>
+            <ellipse cx="-11" cy="-4" rx="7" ry="9" fill="#fff"/>
+            <ellipse cx="11" cy="-4" rx="7" ry="9" fill="#fff"/>
+            <circle cx="-9" cy="-2" r="4" fill="#4A3E52"/>
+            <circle cx="13" cy="-2" r="4" fill="#4A3E52"/>
+            <circle cx="-10.5" cy="-4" r="1.4" fill="#fff"/>
+            <circle cx="11.5" cy="-4" r="1.4" fill="#fff"/>
+            <circle cx="-16" cy="8" r="4.5" fill="#F2A0C6" opacity=".6"/>
+            <circle cx="18" cy="8" r="4.5" fill="#F2A0C6" opacity=".6"/>
+            <path d="M-8,12 Q0,19 8,12" stroke="#4A3E52" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <g class="m-arm" style="transform-origin:-28px 10px">
+              <path d="M-28,10 Q-46,-6 -50,-44" stroke="#8F72C7" stroke-width="13" fill="none" stroke-linecap="round"/>
+              <circle cx="-50" cy="-46" r="9" fill="#8F72C7"/>
+            </g>
+          </g>
+        </svg>
+
+        <h1 class="title">O que queres <span class="hi">descobrir</span> hoje?</h1>
+        <p class="subtitle">Pergunta-me o que quiseres. Adoro perguntas.</p>
+
+        <div class="chips">
+          <button class="chip">O que faz os trovões? ⛈️</button>
+          <button class="chip">Porque é que as estrelas brilham? ✨</button>
+          <button class="chip">Porque é que os gatos ronronam? 🐱</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-bar">
+      <div class="input-pill">
+        <span class="input-placeholder">Pergunta-me o que quiseres...</span>
+        <button class="send-btn" aria-label="Enviar pergunta">
+          <span class="send-ring"></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 L20 4 L14 20 L11 13 L4 12 Z" fill="#fff"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 2 — CONVERSATION ============ -->
+<div class="frame-block">
+  <p class="caption">2. Conversa</p>
+  <div class="frame">
+    <svg class="scene-bg" viewBox="0 0 1024 600" preserveAspectRatio="none" aria-hidden="true">
+      <use href="#sparkle" x="60" y="34" width="18" height="17" fill="#F2A0C6" class="tw" style="animation-delay:0s"/>
+      <use href="#sparkle" x="168" y="82" width="12" height="11" fill="#2FA79B" class="tw" style="animation-delay:.5s"/>
+      <use href="#sparkle" x="300" y="30" width="20" height="19" fill="#8F72C7" class="tw" style="animation-delay:1s"/>
+      <use href="#sparkle" x="458" y="70" width="14" height="13" fill="#F3C55A" class="tw" style="animation-delay:1.4s"/>
+      <use href="#sparkle" x="616" y="38" width="16" height="15" fill="#F2A0C6" class="tw" style="animation-delay:.3s"/>
+      <use href="#sparkle" x="758" y="90" width="12" height="11" fill="#2FA79B" class="tw" style="animation-delay:1.8s"/>
+      <use href="#sparkle" x="880" y="46" width="20" height="19" fill="#8F72C7" class="tw" style="animation-delay:.8s"/>
+      <use href="#sparkle" x="946" y="112" width="14" height="13" fill="#F2A0C6" class="tw" style="animation-delay:1.2s"/>
+      <use href="#sparkle" x="34" y="168" width="10" height="9" fill="#2FA79B" class="tw" style="animation-delay:1.6s"/>
+      <use href="#sparkle" x="978" y="200" width="16" height="15" fill="#8F72C7" class="tw" style="animation-delay:.2s"/>
+      <path d="M0,410 C160,362 320,396 480,380 C620,366 760,402 900,384 C960,376 1000,392 1024,386 L1024,600 L0,600 Z" fill="#D9F0E9"/>
+      <path d="M0,452 C180,412 340,436 500,422 C640,410 760,444 900,426 C960,416 1000,432 1024,426 L1024,600 L0,600 Z" fill="#FBDCEA"/>
+      <path d="M0,488 C200,458 360,472 520,460 C660,450 780,480 920,464 C970,457 1000,468 1024,464 L1024,600 L0,600 Z" fill="#AB8FD2"/>
+      <circle cx="130" cy="474" r="4" fill="#fff" opacity=".6"/>
+      <circle cx="240" cy="466" r="3" fill="#fff" opacity=".5"/>
+      <circle cx="420" cy="468" r="4" fill="#fff" opacity=".55"/>
+      <circle cx="600" cy="472" r="3" fill="#fff" opacity=".5"/>
+      <circle cx="760" cy="467" r="4" fill="#fff" opacity=".55"/>
+      <circle cx="900" cy="472" r="3" fill="#fff" opacity=".5"/>
+    </svg>
+    <div class="grain"></div>
+
+    <div class="frame-inner">
+      <div class="topbar">
+        <div class="brand">
+          <svg viewBox="0 0 22 21" width="24" height="23" fill="#F3C55A" aria-hidden="true"><use href="#sparkle"/></svg>
+          <span class="brand-word">Eli7</span>
+        </div>
+        <button class="new-chat">Nova conversa <span>✨</span></button>
+      </div>
+
+      <div class="conversation">
+        <div class="q-row"><div class="q-bubble">Porque é que o céu é azul?</div></div>
+
+        <div class="answer-row">
+          <div class="avatar-badge">
+            <svg width="40" height="40" viewBox="0 0 120 120" aria-hidden="true">
+              <g transform="translate(60,64)">
+                <g fill="#6B4FA0" transform="translate(3,4)">
+                  <circle r="30"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                </g>
+                <g fill="#8F72C7">
+                  <circle r="30"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                </g>
+                <ellipse cx="-12" cy="-14" rx="16" ry="11" fill="#fff" opacity=".22"/>
+                <ellipse cx="-11" cy="-4" rx="7" ry="9" fill="#fff"/>
+                <ellipse cx="11" cy="-4" rx="7" ry="9" fill="#fff"/>
+                <circle cx="-9" cy="-2" r="4" fill="#4A3E52"/>
+                <circle cx="13" cy="-2" r="4" fill="#4A3E52"/>
+                <circle cx="-10.5" cy="-4" r="1.4" fill="#fff"/>
+                <circle cx="11.5" cy="-4" r="1.4" fill="#fff"/>
+                <circle cx="-16" cy="8" r="4.5" fill="#F2A0C6" opacity=".6"/>
+                <circle cx="18" cy="8" r="4.5" fill="#F2A0C6" opacity=".6"/>
+                <path d="M-8,12 Q0,19 8,12" stroke="#4A3E52" stroke-width="3" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+
+          <div class="answer-card">
+            <p>Olá, Diana! Que pergunta brilhante. ✨ A luz do Sol parece branca, mas na verdade tem escondidas lá dentro todas as cores do arco-íris, todas misturadas.</p>
+            <p>Quando essa luz chega à Terra, vai bater nas partículas de ar que estão à nossa volta. A cor azul é a que salta e se espalha mais para todos os lados. Por isso, para onde quer que olhes, vês o céu azul!</p>
+            <ul class="bullets">
+              <li>🌈 A luz do Sol tem todas as cores escondidas lá dentro.</li>
+              <li>💨 O ar espalha a cor azul muito mais do que as outras cores.</li>
+              <li>🌅 Ao pôr do sol, a luz viaja mais longe e por isso vemos laranja e rosa.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-bar">
+      <div class="input-pill">
+        <span class="input-placeholder">Pergunta-me o que quiseres...</span>
+        <button class="send-btn" aria-label="Enviar pergunta">
+          <span class="send-ring"></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 L20 4 L14 20 L11 13 L4 12 Z" fill="#fff"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 3 — THINKING / LOADING ============ -->
+<div class="frame-block">
+  <p class="caption">3. A pensar</p>
+  <div class="frame">
+    <svg class="scene-bg" viewBox="0 0 1024 600" preserveAspectRatio="none" aria-hidden="true">
+      <use href="#sparkle" x="60" y="34" width="18" height="17" fill="#F2A0C6" class="tw" style="animation-delay:0s"/>
+      <use href="#sparkle" x="168" y="82" width="12" height="11" fill="#2FA79B" class="tw" style="animation-delay:.5s"/>
+      <use href="#sparkle" x="300" y="30" width="20" height="19" fill="#8F72C7" class="tw" style="animation-delay:1s"/>
+      <use href="#sparkle" x="458" y="70" width="14" height="13" fill="#F3C55A" class="tw" style="animation-delay:1.4s"/>
+      <use href="#sparkle" x="616" y="38" width="16" height="15" fill="#F2A0C6" class="tw" style="animation-delay:.3s"/>
+      <use href="#sparkle" x="758" y="90" width="12" height="11" fill="#2FA79B" class="tw" style="animation-delay:1.8s"/>
+      <use href="#sparkle" x="880" y="46" width="20" height="19" fill="#8F72C7" class="tw" style="animation-delay:.8s"/>
+      <use href="#sparkle" x="946" y="112" width="14" height="13" fill="#F2A0C6" class="tw" style="animation-delay:1.2s"/>
+      <use href="#sparkle" x="34" y="168" width="10" height="9" fill="#2FA79B" class="tw" style="animation-delay:1.6s"/>
+      <use href="#sparkle" x="978" y="200" width="16" height="15" fill="#8F72C7" class="tw" style="animation-delay:.2s"/>
+      <path d="M0,410 C160,362 320,396 480,380 C620,366 760,402 900,384 C960,376 1000,392 1024,386 L1024,600 L0,600 Z" fill="#D9F0E9"/>
+      <path d="M0,452 C180,412 340,436 500,422 C640,410 760,444 900,426 C960,416 1000,432 1024,426 L1024,600 L0,600 Z" fill="#FBDCEA"/>
+      <path d="M0,488 C200,458 360,472 520,460 C660,450 780,480 920,464 C970,457 1000,468 1024,464 L1024,600 L0,600 Z" fill="#AB8FD2"/>
+      <circle cx="130" cy="474" r="4" fill="#fff" opacity=".6"/>
+      <circle cx="240" cy="466" r="3" fill="#fff" opacity=".5"/>
+      <circle cx="420" cy="468" r="4" fill="#fff" opacity=".55"/>
+      <circle cx="600" cy="472" r="3" fill="#fff" opacity=".5"/>
+      <circle cx="760" cy="467" r="4" fill="#fff" opacity=".55"/>
+      <circle cx="900" cy="472" r="3" fill="#fff" opacity=".5"/>
+    </svg>
+    <div class="grain"></div>
+
+    <div class="frame-inner">
+      <div class="topbar">
+        <div class="brand">
+          <svg viewBox="0 0 22 21" width="24" height="23" fill="#F3C55A" aria-hidden="true"><use href="#sparkle"/></svg>
+          <span class="brand-word">Eli7</span>
+        </div>
+      </div>
+
+      <div class="conversation">
+        <div class="q-row"><div class="q-bubble">Porque é que o céu é azul?</div></div>
+
+        <div class="thinking-wrap">
+          <div class="thinking-row">
+            <div class="avatar-badge avatar-badge--lg m-float">
+              <svg width="74" height="74" viewBox="0 0 120 120" aria-hidden="true">
+                <g transform="translate(60,64)">
+                  <g fill="#6B4FA0" transform="translate(3,4)">
+                    <circle r="30"/>
+                    <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                    <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                    <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                    <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                    <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                  </g>
+                  <g fill="#8F72C7">
+                    <circle r="30"/>
+                    <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                    <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                    <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                    <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                    <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                  </g>
+                  <ellipse cx="-12" cy="-14" rx="16" ry="11" fill="#fff" opacity=".22"/>
+                  <path d="M-17,-5 Q-10,-11 -3,-5" stroke="#4A3E52" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <path d="M3,-5 Q10,-11 17,-5" stroke="#4A3E52" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <circle cx="-16" cy="8" r="4.5" fill="#F2A0C6" opacity=".6"/>
+                  <circle cx="18" cy="8" r="4.5" fill="#F2A0C6" opacity=".6"/>
+                  <path d="M-8,13 Q0,20 8,13" stroke="#4A3E52" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <g class="m-orbit" style="transform-origin:0px 0px">
+                    <use href="#sparkle" x="28" y="-52" width="16" height="15" fill="#F3C55A"/>
+                  </g>
+                </g>
+              </svg>
+            </div>
+
+            <div class="thinking-card">
+              <p>Eli7 está a pensar numa resposta divertida...</p>
+              <div class="dots"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-bar">
+      <div class="input-pill">
+        <span class="input-placeholder">Pergunta-me o que quiseres...</span>
+        <button class="send-btn" aria-label="Enviar pergunta">
+          <span class="send-ring"></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 L20 4 L14 20 L11 13 L4 12 Z" fill="#fff"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

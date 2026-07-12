@@ -11,11 +11,14 @@ services:
       - TEMPERATURE=${TEMPERATURE:-0.7}
       - MAX_TOKENS=${MAX_TOKENS:-200}
       - SAVE_TRANSCRIPTS=${SAVE_TRANSCRIPTS:-false}
+      - DIANA_MEMORY_DIR=/memory
+      - TELEMETRY_SOURCE=pi  # this compose IS the Pi/production context; Mac dev (uvicorn) stays 'local'
     env_file:
       - .env  # Load from .env file
     volumes:
       - ./api:/app
       - ./logs:/app/logs  # Mount logs directory for conversation history
+      - ./diana-memory:/memory  # Persistent git-backed memory repo (survives container recreate)
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   ui:

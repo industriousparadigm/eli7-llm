@@ -48,10 +48,12 @@ if [ -z "$URL" ]; then
     exit 1
 fi
 
-# Disable screen blanking
-xset s off 2>/dev/null || true
-xset -dpms 2>/dev/null || true
-xset s noblank 2>/dev/null || true
+# Screen sleeps after 20 min idle to spare the panel + power; wakes instantly on
+# touch or keypress. The Pi itself never sleeps or shuts down - only the display
+# powers off - so the app + Diana's memory stay live and waking is instant.
+xset s 1200 1200 2>/dev/null || true
+xset +dpms 2>/dev/null || true
+xset dpms 1200 1200 1200 2>/dev/null || true
 
 # Launch Chromium in kiosk mode
 echo "Opening browser at $URL"

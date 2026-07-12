@@ -1,38 +1,104 @@
 :root {
-  /* Daylight Canvas Design Tokens */
-  /* Background gradients */
-  --bg-1: #F7F5FF;   /* pale lavender */
-  --bg-2: #EEF6FF;   /* pale sky */
-  --bg-3: #FFFFFF;   /* near white at horizon */
-  
-  /* Text colors */
-  --ink: #1C2230;        /* primary text */
-  --ink-muted: #5F6B85;  /* secondary text */
-  
-  /* Accent colors */
-  --accent: #5CD6B5;     /* mint - primary action */
-  --accent-2: #FFB3DE;   /* blossom pink - used sparingly */
-  --accent-3: #7DB7FF;   /* sky blue - focus states */
-  --ring: rgba(125, 183, 255, 0.55);  /* focus ring */
-  
+  /* Pastel Kawaii Design Tokens */
+
+  /* Background (creamy warm canvas) */
+  --bg-1: #FFF6EC;
+  --bg-2: #FFFBF6;
+  --bg-3: #FDFBFE;
+
+  /* Ink / text */
+  --ink: #4A3A5C;
+  --ink-muted: #6F5E88;
+  --ink-soft: #9C8FB3;
+
+  /* Palette */
+  --pink: #FFD3E8;
+  --pink-pale: #FFE9F3;
+  --pink-deep: #FF8FC0;
+  --pink-border: #FFC1DE;
+  --pink-text: #B23E77;
+
+  --teal: #8CE8DC;
+  --teal-pale: #E3F9F5;
+  --teal-deep: #3FC7B8;
+  --teal-dark: #2FA79A;
+  --teal-border: #8FE0D3;
+  --teal-text: #166A61;
+
+  --lilac: #D9C8FA;
+  --lilac-pale: #EFE8FC;
+  --lilac-deep: #B39DE8;
+  --lilac-border: #C7B2F2;
+  --lilac-text: #5A3FA0;
+
+  --gold: #FFD873;
+
+  /* Semantic aliases consumed by App.css */
+  --accent: var(--teal-deep);
+  --accent-2: var(--pink-deep);
+  --accent-3: var(--lilac-deep);
+  --ring: rgba(179, 157, 232, 0.5);
+
+  /* Mascot */
+  --mascot-body: #FFFFFF;
+  --mascot-shadow: #F6D9EA;
+  --mascot-face: #5B4B73;
+  --mascot-blush: #FFB4CE;
+  --mascot-sparkle: var(--gold);
+
+  /* Chips */
+  --chip-pink-bg: var(--pink-pale);
+  --chip-pink-border: var(--pink-border);
+  --chip-pink-text: var(--pink-text);
+  --chip-pink-shadow: 0 3px 0 var(--pink-border), 0 9px 16px rgba(255, 143, 192, 0.20);
+
+  --chip-teal-bg: var(--teal-pale);
+  --chip-teal-border: var(--teal-border);
+  --chip-teal-text: var(--teal-text);
+  --chip-teal-shadow: 0 3px 0 var(--teal-border), 0 9px 16px rgba(63, 199, 184, 0.20);
+
+  --chip-lilac-bg: var(--lilac-pale);
+  --chip-lilac-border: var(--lilac-border);
+  --chip-lilac-text: var(--lilac-text);
+  --chip-lilac-shadow: 0 3px 0 var(--lilac-border), 0 9px 16px rgba(179, 157, 232, 0.20);
+
+  /* Bubbles */
+  --bubble-bg: #FFFFFF;
+  --bubble-border: #E7F7F3;
+  --shadow-bubble: 0 3px 0 #EAF6F2, 0 12px 24px rgba(123, 93, 196, 0.10);
+
+  --question-bg: linear-gradient(135deg, #FFD9EC, #FFC0DE);
+  --question-text: #7A3160;
+  --shadow-question: 0 3px 0 #FFB2D6, 0 8px 16px rgba(255, 150, 200, 0.20);
+
+  /* Interactive glows */
+  --shadow-send: 0 4px 0 var(--teal-dark), 0 10px 18px rgba(63, 199, 184, 0.35);
+  --shadow-newchat: 0 3px 0 #DFF7F3, 0 6px 14px rgba(63, 199, 184, 0.18);
+  --shadow-glow-teal: 0 4px 12px rgba(63, 199, 184, 0.35);
+  --shadow-card: 0 8px 24px rgba(150, 110, 170, 0.10);
+
   /* Layout */
-  --radius-lg: 24px;
-  --radius-md: 18px;
+  --radius-lg: 32px;
+  --radius-md: 20px;
+  --radius-corner: 24px;
+  --radius-tail: 6px;
+  --radius-pill: 999px;
   --gap: 14px;
   --max-width: 740px;
   --prompt-height: 64px;
-  
+
   /* Typography */
-  --font-body: "Lexend", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  --font-size-title: 32px;
-  --font-size-subtitle: 20px;
-  --font-size-body: 20px;
-  --font-size-chip: 18px;
+  --font-heading: "Baloo 2", ui-rounded, system-ui, sans-serif, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji";
+  --font-body: "Nunito", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji";
+  --font-size-title: 34px;
+  --font-size-subtitle: 19px;
+  --font-size-body: 19px;
+  --font-size-chip: 17px;
   --font-size-small: 16px;
   --line-height: 1.6;
   --font-weight-normal: 400;
-  --font-weight-semibold: 600;
-  
+  --font-weight-semibold: 700;
+
   /* Animation */
   --transition-fast: 150ms ease-out;
   --transition-normal: 200ms ease-out;
@@ -49,7 +115,7 @@
 
 @media (max-width: 640px) {
   :root {
-    --font-size-body: 20px;
+    --font-size-body: 19px;
     --max-width: 100%;
     --prompt-height: 72px;
   }

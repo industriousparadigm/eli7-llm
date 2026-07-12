@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Eli7 — Direções de Design</title>
+<style>
+  :root {
+    --paper: #f4f5f7;
+    --card: #ffffff;
+    --ink: #1e2233;
+    --muted: #6b7180;
+    --line: #e4e6eb;
+    --accent: #0ea5a0;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--font); line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    max-width: 1200px; margin: 0 auto; padding: 40px 28px 8px;
+  }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 16px; max-width: 720px; margin: 0; }
+  .note {
+    max-width: 1200px; margin: 18px auto 0; padding: 0 28px;
+    color: var(--muted); font-size: 14px;
+  }
+  .note b { color: var(--ink); font-weight: 600; }
+  .grid {
+    max-width: 1200px; margin: 0 auto; padding: 24px 28px 60px;
+    display: grid; gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    align-items: start;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    overflow: hidden; box-shadow: 0 6px 24px rgba(20,20,40,0.05);
+  }
+  .card-head { padding: 18px 18px 14px; }
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 999px; font-size: 13px; font-weight: 700;
+    color: #fff; margin-right: 8px; vertical-align: middle;
+  }
+  .name { font-size: 18px; font-weight: 700; vertical-align: middle; }
+  .desc { color: var(--muted); font-size: 14px; margin: 10px 0 14px; }
+  .open {
+    display: inline-block; text-decoration: none; color: var(--accent);
+    font-weight: 600; font-size: 14px; border: 1px solid var(--accent);
+    padding: 7px 14px; border-radius: 999px; transition: all .15s ease;
+  }
+  .open:hover { background: var(--accent); color: #fff; }
+  .shot { display: block; width: 100%; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Eli7 — cinco direções de design</h1>
+    <p class="sub">Protótipos estáticos (só visual, sem funcionalidade) para escolheres o estilo daqui para a frente. Cada um mostra três ecrãs a 1024×600: boas-vindas, conversa e "a pensar".</p>
+  </header>
+  <p class="note">Norte: gosto Josh Comeau + o que a <b>Diana</b> adora — Rosalina &amp; os Lumas, teal / rosa / branco / roxo, coisas fofas, curiosas e alegres. Carrega em <b>Abrir</b> para ver cada um em grande.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="card-head">
+        <span class="badge" style="background:#6d5bd0">1</span><span class="name">Cosmic Luma</span>
+        <div class="desc">Planetário mágico nocturno. Céu teal→roxo, estrelas a cintilar, mascote Luma brilhante. Sonhador e cheio de encanto.</div>
+        <a class="open" href="./variant-1-cosmic-luma.html" target="_blank">Abrir em grande →</a>
+      </div>
+      <img class="shot" src="./thumb-variant-1-cosmic-luma.png" alt="Cosmic Luma" loading="lazy">
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="badge" style="background:#ec4899">2</span><span class="name">Pastel Kawaii</span>
+        <div class="desc">Ternura de papelaria kawaii. Creme, mascote nuvem coradinha, chips-autocolante com sombras de rebuçado. Doce e aconchegante.</div>
+        <a class="open" href="./variant-2-pastel-kawaii.html" target="_blank">Abrir em grande →</a>
+      </div>
+      <img class="shot" src="./thumb-variant-2-pastel-kawaii.png" alt="Pastel Kawaii" loading="lazy">
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="badge" style="background:#0ea5a0">3</span><span class="name">Comeau Playground</span>
+        <div class="desc">A sensibilidade joshwcomeau.com. Molduras creme, título com gradiente, sombras suaves em camadas. O mais "de designer".</div>
+        <a class="open" href="./variant-3-comeau-playground.html" target="_blank">Abrir em grande →</a>
+      </div>
+      <img class="shot" src="./thumb-variant-3-comeau-playground.png" alt="Comeau Playground" loading="lazy">
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="badge" style="background:#8b5cf6">4</span><span class="name">Storybook Magic</span>
+        <div class="desc">Um livro de histórias vivo. Colinas pintadas, uma estrelinha que acena, espreita e dorme entre ecrãs. Narrativo e quentinho.</div>
+        <a class="open" href="./variant-4-storybook-magic.html" target="_blank">Abrir em grande →</a>
+      </div>
+      <img class="shot" src="./thumb-variant-4-storybook-magic.png" alt="Storybook Magic" loading="lazy">
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="badge" style="background:#14b8a6">5</span><span class="name">Bubbly Bold</span>
+        <div class="desc">Alegria em blocos de cor. Branco nítido, chips-autocolante gordinhos, mascote estrela ousada. Enérgico e imediato.</div>
+        <a class="open" href="./variant-5-bubbly-bold.html" target="_blank">Abrir em grande →</a>
+      </div>
+      <img class="shot" src="./thumb-variant-5-bubbly-bold.png" alt="Bubbly Bold" loading="lazy">
+    </div>
+  </div>
+</body>
+</html>

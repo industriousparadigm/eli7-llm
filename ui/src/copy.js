@@ -3,6 +3,8 @@ export const copy = {
   welcome: {
     title: "O que queres descobrir hoje?",
     subtitle: "Pergunta-me o que quiseres. Adoro perguntas.",
+    getToKnowCta: "Queres que eu te conheça melhor? ✨",
+    getToKnowKickoff: "Faz-me perguntas para me conheceres melhor!",
   },
   
   // Starter questions - rotate randomly each session
@@ -39,6 +41,7 @@ export const copy = {
     promptSymbol: "❯",
     retry: "Tentar outra vez?",
     send: "Enviar",
+    thinking: "A pensar numa resposta divertida para ti...",
   },
   
   // Error messages

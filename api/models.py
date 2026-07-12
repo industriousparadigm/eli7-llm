@@ -7,7 +7,7 @@ class Message(BaseModel):
     content: str
 
 class AskRequest(BaseModel):
-    question: str = Field(..., min_length=1, max_length=500)
+    question: str = Field(..., min_length=1, max_length=2000)
     history: List[Message] = Field(default_factory=list)
     session_id: Optional[str] = None
 

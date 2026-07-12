@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eli7 — Bubbly Bold</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#0FBFAE;
+    --teal-dark:#0A8F82;
+    --teal-tint:#E4FBF7;
+    --pink:#FF5CA8;
+    --pink-dark:#E63888;
+    --pink-tint:#FFE9F3;
+    --purple:#7B5CFA;
+    --purple-dark:#5A3FD1;
+    --purple-deep:#3D2B84;
+    --purple-deep-dark:#2A1C63;
+    --yellow:#FFD23F;
+    --ink:#241C45;
+    --ink-soft:#75709A;
+    --ink-faint:#B9B3D6;
+    --page-bg:#F3F1FB;
+    --white:#FFFFFF;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+
+  body{
+    background:var(--page-bg);
+    font-family:'Nunito',sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:48px 24px 88px;
+    min-width:1136px;
+    color:var(--ink);
+  }
+
+  .page-header{ text-align:center; margin-bottom:40px; max-width:640px; }
+  .page-header .eyebrow{
+    font:800 13px/1 'Nunito',sans-serif;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--pink-dark);
+    margin:0 0 8px;
+  }
+  .page-header h1{
+    font:800 30px/1.2 'Baloo 2',sans-serif;
+    color:var(--ink);
+    margin:0;
+  }
+  .page-header p{
+    font:700 15px/1.5 'Nunito',sans-serif;
+    color:var(--ink-soft);
+    margin:8px 0 0;
+  }
+
+  .screen-block{ margin-bottom:56px; }
+  .screen-block:last-child{ margin-bottom:0; }
+
+  .caption{
+    display:block;
+    font:700 12px/1 'Nunito',sans-serif;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:#9C97BE;
+    margin:0 0 14px;
+    padding-left:6px;
+  }
+
+  /* ============ FRAME ============ */
+  .frame{
+    width:1024px;
+    height:600px;
+    position:relative;
+    overflow:hidden;
+    border-radius:40px;
+    background:var(--white);
+    border:1px solid rgba(36,28,69,.05);
+    box-shadow:
+      0 1px 2px rgba(36,28,69,.05),
+      0 10px 20px -8px rgba(36,28,69,.12),
+      0 36px 60px -20px rgba(36,28,69,.24);
+  }
+
+  button{ font-family:inherit; }
+  button:focus-visible, .fake-input:focus-visible{
+    outline:3px solid var(--purple-deep);
+    outline-offset:3px;
+  }
+
+  /* ============ AMBIENT SPARKLES ============ */
+  .spark{ position:absolute; display:block; animation:twinkle 3.6s ease-in-out infinite; }
+  .spark svg{ display:block; width:100%; height:100%; }
+
+  @keyframes twinkle{
+    0%,100%{ opacity:.25; transform:scale(.8) rotate(0deg); }
+    50%{ opacity:.9; transform:scale(1.1) rotate(12deg); }
+  }
+  @keyframes floatY{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-9px); }
+  }
+  @keyframes bob{
+    0%,100%{ transform:translate(-50%,-50%) translateY(0) scale(1); }
+    50%{ transform:translate(-50%,-50%) translateY(-7px) scale(1.03); }
+  }
+  @keyframes orbit{
+    from{ transform:rotate(0deg); }
+    to{ transform:rotate(360deg); }
+  }
+  @keyframes dotBounce{
+    0%,80%,100%{ transform:translateY(0); opacity:.45; }
+    40%{ transform:translateY(-8px); opacity:1; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration:.01ms !important;
+      animation-iteration-count:1 !important;
+    }
+  }
+
+  /* ============ SHARED: chips, pills, composer, bubbles ============ */
+  .chip{
+    font:800 17px/1.28 'Nunito',sans-serif;
+    color:var(--ink);
+    border:none;
+    cursor:pointer;
+    padding:14px 20px;
+    border-radius:26px;
+    text-align:center;
+    white-space:normal;
+    flex:0 1 258px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .chip:hover{ transform:translateY(-3px); }
+  .chip:active{ transform:translate(2px,2px); }
+  .chip-teal{ background:var(--teal); box-shadow:5px 5px 0 var(--teal-dark), 0 14px 22px -10px rgba(10,143,130,.35); }
+  .chip-teal:active{ box-shadow:2px 2px 0 var(--teal-dark), 0 6px 12px -6px rgba(10,143,130,.3); }
+  .chip-pink{ background:var(--pink); box-shadow:5px 5px 0 var(--pink-dark), 0 14px 22px -10px rgba(230,56,136,.35); }
+  .chip-pink:active{ box-shadow:2px 2px 0 var(--pink-dark), 0 6px 12px -6px rgba(230,56,136,.3); }
+  .chip-purple{ background:var(--purple); box-shadow:5px 5px 0 var(--purple-dark), 0 14px 22px -10px rgba(90,63,209,.35); }
+  .chip-purple:active{ box-shadow:2px 2px 0 var(--purple-dark), 0 6px 12px -6px rgba(90,63,209,.3); }
+
+  .composer{
+    position:absolute;
+    left:40px; right:40px; bottom:32px;
+    height:72px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+  }
+  .fake-input{
+    flex:1;
+    height:64px;
+    background:var(--white);
+    border:3px solid var(--teal);
+    border-radius:30px;
+    display:flex;
+    align-items:center;
+    padding:0 26px;
+    font:700 18px/1 'Nunito',sans-serif;
+    color:var(--ink-faint);
+  }
+  .send-btn{
+    width:64px; height:64px;
+    border-radius:50%;
+    background:var(--pink);
+    border:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:5px 5px 0 var(--pink-dark), 0 14px 22px -8px rgba(230,56,136,.45);
+    flex:0 0 64px;
+    transition:transform .15s ease;
+  }
+  .send-btn:hover{ transform:translateY(-2px); }
+  .send-btn:active{ transform:translate(2px,2px); }
+
+  .lumi{ display:block; }
+
+  /* ============ SCREEN 1 — WELCOME ============ */
+  .frame.welcome{ }
+  .welcome-content{
+    position:absolute; inset:0 0 118px 0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:0 70px;
+    z-index:1;
+  }
+  .lumi-welcome{ animation:floatY 3.2s ease-in-out infinite; }
+  .welcome-title{
+    position:relative;
+    font:800 44px/1.22 'Baloo 2',sans-serif;
+    color:var(--ink);
+    text-align:center;
+    margin:6px 0 0;
+    max-width:760px;
+  }
+  .welcome-title .squiggle{
+    position:absolute;
+    left:50%;
+    bottom:-10px;
+    transform:translateX(-50%);
+    width:190px;
+    height:16px;
+  }
+  .welcome-subtitle{
+    font:700 19px/1.5 'Nunito',sans-serif;
+    color:var(--ink-soft);
+    text-align:center;
+    margin:14px 0 0;
+    max-width:560px;
+  }
+  .chip-row{
+    display:flex;
+    gap:16px;
+    justify-content:center;
+    flex-wrap:wrap;
+    max-width:840px;
+    margin-top:18px;
+  }
+
+  /* ============ SCREEN 2 — CONVERSATION ============ */
+  .convo-header{
+    position:absolute; top:0; left:0; right:0; height:84px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 40px;
+    z-index:1;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .lumi-mini-badge{
+    width:42px; height:42px; border-radius:50%;
+    background:var(--teal-tint);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand .lumi-mini-badge svg{ width:32px; height:32px; }
+  .brand-name{ font:800 22px/1 'Baloo 2',sans-serif; color:var(--teal-dark); }
+  .newchat-btn{
+    font:800 16px/1 'Nunito',sans-serif;
+    color:var(--ink);
+    background:var(--purple);
+    border:none;
+    border-radius:24px;
+    padding:12px 22px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    box-shadow:4px 4px 0 var(--purple-dark), 0 10px 18px -8px rgba(90,63,209,.4);
+    transition:transform .15s ease;
+  }
+  .newchat-btn:hover{ transform:translateY(-2px); }
+  .newchat-btn:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--purple-dark); }
+
+  .convo-body{
+    position:absolute;
+    top:84px; left:0; right:0; bottom:118px;
+    padding:6px 48px 0;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    z-index:1;
+  }
+  .question-row{ display:flex; justify-content:flex-end; }
+  .bubble-question{
+    background:var(--pink);
+    color:var(--ink);
+    font:800 18px/1.4 'Nunito',sans-serif;
+    padding:14px 22px;
+    border-radius:24px 24px 6px 24px;
+    max-width:560px;
+    box-shadow:3px 3px 0 var(--pink-dark), 0 8px 16px -8px rgba(36,28,69,.15);
+  }
+  .answer-row{ display:flex; gap:14px; align-items:flex-start; }
+  .answer-row .lumi-mini-badge{
+    width:44px; height:44px; border-radius:50%;
+    background:var(--purple-deep);
+    display:flex; align-items:center; justify-content:center;
+    flex:0 0 44px;
+    margin-top:2px;
+  }
+  .answer-row .lumi-mini-badge svg{ width:32px; height:32px; }
+  .bubble-answer{
+    flex:1;
+    background:var(--purple-deep);
+    color:var(--white);
+    border-radius:6px 26px 26px 26px;
+    padding:20px 26px;
+    box-shadow:3px 3px 0 var(--purple-deep-dark), 0 10px 20px -10px rgba(36,28,69,.3);
+  }
+  .bubble-answer h2{
+    font:800 22px/1.2 'Baloo 2',sans-serif;
+    margin:0 0 8px;
+    color:var(--white);
+  }
+  .bubble-answer p{
+    font:600 16.5px/1.42 'Nunito',sans-serif;
+    margin:0 0 8px;
+    color:#F1EDFF;
+  }
+  .bubble-answer ul{
+    list-style:none;
+    margin:8px 0 0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .bubble-answer li{
+    font:700 15.5px/1.35 'Nunito',sans-serif;
+    color:var(--white);
+  }
+
+  /* ============ SCREEN 3 — THINKING ============ */
+  .think-header{
+    position:absolute; top:0; left:0; right:0; height:84px;
+    display:flex; align-items:center;
+    padding:0 40px;
+    z-index:1;
+  }
+  .think-question-row{
+    position:absolute; top:84px; left:0; right:0;
+    padding:6px 48px 0;
+    display:flex; justify-content:flex-end;
+    z-index:1;
+  }
+  .think-indicator{
+    position:absolute; top:170px; left:0; right:0; bottom:118px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:20px;
+    z-index:1;
+  }
+  .orbit-wrap{ position:relative; width:190px; height:190px; }
+  .orbit-ring{ position:absolute; inset:0; animation:orbit 7s linear infinite; }
+  .orbit-star{ position:absolute; top:50%; left:50%; transform:rotate(var(--angle)) translateX(88px); }
+  .orbit-star svg{ display:block; width:18px; height:18px; transform:translate(-50%,-50%); }
+  .lumi-center{
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    animation:bob 2.3s ease-in-out infinite;
+  }
+  .lumi-center svg{ display:block; }
+  .thinking-chip{
+    font:800 19px/1 'Nunito',sans-serif;
+    color:var(--ink);
+    background:var(--teal);
+    border-radius:30px;
+    padding:14px 26px;
+    display:inline-flex;
+    align-items:center;
+    gap:12px;
+    box-shadow:4px 4px 0 var(--teal-dark), 0 12px 20px -10px rgba(10,143,130,.35);
+  }
+  .dots{ display:inline-flex; gap:6px; align-items:center; }
+  .dots span{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--ink);
+    display:inline-block;
+    animation:dotBounce 1.1s infinite ease-in-out;
+  }
+  .dots span:nth-child(2){ animation-delay:.15s; }
+  .dots span:nth-child(3){ animation-delay:.3s; }
+
+  .composer.dimmed{ opacity:.5; }
+  .composer.dimmed .fake-input{ border-color:var(--ink-faint); }
+</style>
+</head>
+<body>
+
+  <div class="page-header">
+    <p class="eyebrow">Eli7 · Protótipo de estilo</p>
+    <h1>Bubbly Bold</h1>
+    <p>Alegria em blocos de cor cheios — teal, rosa e roxo em cantos bem redondos, sombras de autocolante e emoji em grande.</p>
+  </div>
+
+  <!-- ============ SCREEN 1 — WELCOME ============ -->
+  <div class="screen-block">
+    <span class="caption">1 · Boas-vindas</span>
+    <div class="frame welcome">
+
+      <!-- ambient sparkles -->
+      <span class="spark" style="top:44px; left:70px; width:20px; height:20px; animation-delay:.2s;">
+        <svg viewBox="0 0 28 28"><path d="M14,0 C15.5,8 17,9.5 28,14 C17,18.5 15.5,20 14,28 C12.5,20 11,18.5 0,14 C11,9.5 12.5,8 14,0 Z" fill="var(--yellow)"/></svg>
+      </span>
+      <span class="spark" style="top:96px; right:110px; width:16px; height:16px; animation-delay:1.1s;">
+        <svg viewBox="0 0 28 28"><path d="M14,0 C15.5,8 17,9.5 28,14 C17,18.5 15.5,20 14,28 C12.5,20 11,18.5 0,14 C11,9.5 12.5,8 14,0 Z" fill="var(--pink)"/></svg>
+      </span>
+      <span class="spark" style="bottom:150px; left:56px; width:14px; height:14px; animation-delay:1.9s;">
+        <svg viewBox="0 0 28 28"><path d="M14,0 C15.5,8 17,9.5 28,14 C17,18.5 15.5,20 14,28 C12.5,20 11,18.5 0,14 C11,9.5 12.5,8 14,0 Z" fill="var(--purple)"/></svg>
+      </span>
+      <span class="spark" style="top:60px; right:280px; width:12px; height:12px; animation-delay:.7s;">
+        <svg viewBox="0 0 28 28"><path d="M14,0 C15.5,8 17,9.5 28,14 C17,18.5 15.5,20 14,28 C12.5,20 11,18.5 0,14 C11,9.5 12.5,8 14,0 Z" fill="var(--teal)"/></svg>
+      </span>
+      <span class="spark" style="bottom:180px; right:70px; width:18px; height:18px; animation-delay:2.4s;">
+        <svg viewBox="0 0 28 28"><path d="M14,0 C15.5,8 17,9.5 28,14 C17,18.5 15.5,20 14,28 C12.5,20 11,18.5 0,14 C11,9.5 12.5,8 14,0 Z" fill="var(--yellow)"/></svg>
+      </span>
+
+      <div class="welcome-content">
+        <svg class="lumi lumi-welcome" viewBox="0 0 120 120" width="92" height="92" aria-hidden="true">
+          <g transform="translate(60,64)">
+            <g fill="var(--purple-deep)" transform="scale(1.12)">
+              <circle r="30"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+            </g>
+            <g fill="var(--teal)">
+              <circle r="30"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+              <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+            </g>
+            <ellipse cx="-11" cy="-4" rx="7" ry="9" fill="#fff"/>
+            <ellipse cx="11" cy="-4" rx="7" ry="9" fill="#fff"/>
+            <circle cx="-9" cy="-2" r="4" fill="var(--ink)"/>
+            <circle cx="13" cy="-2" r="4" fill="var(--ink)"/>
+            <circle cx="-10.5" cy="-4" r="1.4" fill="#fff"/>
+            <circle cx="11.5" cy="-4" r="1.4" fill="#fff"/>
+            <circle cx="-16" cy="8" r="4.5" fill="var(--pink)" opacity=".85"/>
+            <circle cx="18" cy="8" r="4.5" fill="var(--pink)" opacity=".85"/>
+            <path d="M-8,12 Q0,19 8,12" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </g>
+        </svg>
+
+        <h1 class="welcome-title">O que queres descobrir hoje?
+          <svg class="squiggle" viewBox="0 0 190 16" aria-hidden="true">
+            <path d="M3,10 Q25,0 48,9 T94,9 T140,9 T187,9" stroke="var(--pink)" stroke-width="6" fill="none" stroke-linecap="round"/>
+          </svg>
+        </h1>
+        <p class="welcome-subtitle">Pergunta-me o que quiseres. Adoro perguntas.</p>
+
+        <div class="chip-row">
+          <button class="chip chip-teal">O que faz os trovões? ⛈️</button>
+          <button class="chip chip-pink">Porque é que as estrelas brilham? ✨</button>
+          <button class="chip chip-purple">Porque é que os gatos ronronam? 🐱</button>
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="fake-input">Pergunta-me o que quiseres...</div>
+        <button class="send-btn" aria-label="Enviar pergunta">
+          <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M27,16 L6,6 L14,16 L6,26 Z" fill="var(--ink)"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 2 — CONVERSATION ============ -->
+  <div class="screen-block">
+    <span class="caption">2 · Conversa</span>
+    <div class="frame convo">
+
+      <div class="convo-header">
+        <div class="brand">
+          <span class="lumi-mini-badge">
+            <svg class="lumi" viewBox="0 0 120 120" aria-hidden="true">
+              <g transform="translate(60,64)">
+                <g fill="var(--purple-deep)" transform="scale(1.12)">
+                  <circle r="30"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                </g>
+                <g fill="var(--teal)">
+                  <circle r="30"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                </g>
+                <ellipse cx="-11" cy="-4" rx="7" ry="9" fill="#fff"/>
+                <ellipse cx="11" cy="-4" rx="7" ry="9" fill="#fff"/>
+                <circle cx="-9" cy="-2" r="4" fill="var(--ink)"/>
+                <circle cx="13" cy="-2" r="4" fill="var(--ink)"/>
+                <circle cx="-10.5" cy="-4" r="1.4" fill="#fff"/>
+                <circle cx="11.5" cy="-4" r="1.4" fill="#fff"/>
+                <circle cx="-16" cy="8" r="4.5" fill="var(--pink)" opacity=".85"/>
+                <circle cx="18" cy="8" r="4.5" fill="var(--pink)" opacity=".85"/>
+                <path d="M-8,12 Q0,19 8,12" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </span>
+          <span class="brand-name">Eli7</span>
+        </div>
+        <button class="newchat-btn">Nova conversa ✨</button>
+      </div>
+
+      <div class="convo-body">
+        <div class="question-row">
+          <div class="bubble-question">Porque é que o céu é azul?</div>
+        </div>
+        <div class="answer-row">
+          <span class="lumi-mini-badge">
+            <svg class="lumi" viewBox="0 0 120 120" aria-hidden="true">
+              <g transform="translate(60,64)">
+                <g fill="var(--white)" transform="scale(1.12)">
+                  <circle r="30"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                </g>
+                <g fill="var(--teal)">
+                  <circle r="30"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                </g>
+                <ellipse cx="-11" cy="-4" rx="7" ry="9" fill="#fff"/>
+                <ellipse cx="11" cy="-4" rx="7" ry="9" fill="#fff"/>
+                <circle cx="-9" cy="-2" r="4" fill="var(--ink)"/>
+                <circle cx="13" cy="-2" r="4" fill="var(--ink)"/>
+                <circle cx="-10.5" cy="-4" r="1.4" fill="#fff"/>
+                <circle cx="11.5" cy="-4" r="1.4" fill="#fff"/>
+                <circle cx="-16" cy="8" r="4.5" fill="var(--pink)" opacity=".85"/>
+                <circle cx="18" cy="8" r="4.5" fill="var(--pink)" opacity=".85"/>
+                <path d="M-8,12 Q0,19 8,12" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </span>
+          <div class="bubble-answer">
+            <h2>Olá, Diana! 🌈☀️</h2>
+            <p>Boa pergunta! A luz do Sol parece branca, mas na verdade tem escondidas dentro dela todas as cores do arco-íris, todas misturadas.</p>
+            <p>Quando essa luz chega à Terra, bate nos gases do ar. A cor azul é a que mais "salta" para todos os lados do céu — por isso o céu é azul quase sempre!</p>
+            <ul>
+              <li>☀️ A luz do Sol tem todas as cores escondidas lá dentro.</li>
+              <li>💨 O ar espalha a luz azul muito mais do que as outras cores.</li>
+              <li>🌇 Ao pôr-do-sol vemos laranja e rosa, porque a luz viaja mais longe.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="fake-input">Pergunta-me o que quiseres...</div>
+        <button class="send-btn" aria-label="Enviar pergunta">
+          <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M27,16 L6,6 L14,16 L6,26 Z" fill="var(--ink)"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 3 — THINKING ============ -->
+  <div class="screen-block">
+    <span class="caption">3 · A pensar</span>
+    <div class="frame thinking">
+
+      <div class="think-header">
+        <div class="brand">
+          <span class="lumi-mini-badge">
+            <svg class="lumi" viewBox="0 0 120 120" aria-hidden="true">
+              <g transform="translate(60,64)">
+                <g fill="var(--purple-deep)" transform="scale(1.12)">
+                  <circle r="30"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                </g>
+                <g fill="var(--teal)">
+                  <circle r="30"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                </g>
+                <ellipse cx="-11" cy="-4" rx="7" ry="9" fill="#fff"/>
+                <ellipse cx="11" cy="-4" rx="7" ry="9" fill="#fff"/>
+                <circle cx="-9" cy="-2" r="4" fill="var(--ink)"/>
+                <circle cx="13" cy="-2" r="4" fill="var(--ink)"/>
+                <circle cx="-10.5" cy="-4" r="1.4" fill="#fff"/>
+                <circle cx="11.5" cy="-4" r="1.4" fill="#fff"/>
+                <circle cx="-16" cy="8" r="4.5" fill="var(--pink)" opacity=".85"/>
+                <circle cx="18" cy="8" r="4.5" fill="var(--pink)" opacity=".85"/>
+                <path d="M-8,12 Q0,19 8,12" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </span>
+          <span class="brand-name">Eli7</span>
+        </div>
+      </div>
+
+      <div class="think-question-row">
+        <div class="bubble-question">Porque é que o céu é azul?</div>
+      </div>
+
+      <div class="think-indicator">
+        <div class="orbit-wrap">
+          <div class="orbit-ring">
+            <span class="orbit-star" style="--angle:0deg">
+              <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14,0 C15.5,8 17,9.5 28,14 C17,18.5 15.5,20 14,28 C12.5,20 11,18.5 0,14 C11,9.5 12.5,8 14,0 Z" fill="var(--yellow)"/></svg>
+            </span>
+            <span class="orbit-star" style="--angle:120deg">
+              <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14,0 C15.5,8 17,9.5 28,14 C17,18.5 15.5,20 14,28 C12.5,20 11,18.5 0,14 C11,9.5 12.5,8 14,0 Z" fill="var(--pink)"/></svg>
+            </span>
+            <span class="orbit-star" style="--angle:240deg">
+              <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14,0 C15.5,8 17,9.5 28,14 C17,18.5 15.5,20 14,28 C12.5,20 11,18.5 0,14 C11,9.5 12.5,8 14,0 Z" fill="var(--purple)"/></svg>
+            </span>
+          </div>
+          <div class="lumi-center">
+            <svg class="lumi" viewBox="0 0 120 120" width="128" height="128" aria-hidden="true">
+              <g transform="translate(60,64)">
+                <g fill="var(--purple-deep)" transform="scale(1.12)">
+                  <circle r="30"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                </g>
+                <g fill="var(--teal)">
+                  <circle r="30"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(72)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(144)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(216)"/>
+                  <path d="M0,0 C14,-8 16,-30 0,-46 C-16,-30 -14,-8 0,0 Z" transform="rotate(288)"/>
+                </g>
+                <ellipse cx="-11" cy="-4" rx="7" ry="9" fill="#fff"/>
+                <ellipse cx="11" cy="-4" rx="7" ry="9" fill="#fff"/>
+                <circle cx="-9" cy="-3.5" r="4" fill="var(--ink)"/>
+                <circle cx="13" cy="-3.5" r="4" fill="var(--ink)"/>
+                <circle cx="-10.5" cy="-5.5" r="1.4" fill="#fff"/>
+                <circle cx="11.5" cy="-5.5" r="1.4" fill="#fff"/>
+                <circle cx="-16" cy="8" r="4.5" fill="var(--pink)" opacity=".85"/>
+                <circle cx="18" cy="8" r="4.5" fill="var(--pink)" opacity=".85"/>
+                <path d="M-8,12 Q0,19 8,12" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+        <div class="thinking-chip">
+          A pensar...
+          <span class="dots"><span></span><span></span><span></span></span>
+        </div>
+      </div>
+
+      <div class="composer dimmed">
+        <div class="fake-input">Pergunta-me o que quiseres...</div>
+        <button class="send-btn" aria-label="Enviar pergunta" disabled>
+          <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M27,16 L6,6 L14,16 L6,26 Z" fill="var(--ink)"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

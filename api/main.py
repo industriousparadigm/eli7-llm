@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from contextlib import asynccontextmanager
@@ -16,7 +16,7 @@ from models import (
     TTSRequest, TTSResponse,
     HealthResponse, VersionResponse
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from llm_interface import get_llm_backend
 from utils import (
@@ -27,6 +27,16 @@ from prompts import SYSTEM_PROMPT_V2
 from kid_safety import (
     detect_language, enforce_kid_safety, format_for_language
 )
+import curator
+from memory_repo import ensure_memory_repo, read_memory_context
+
+# Best-effort mirror of live data to Supabase for the auditor dashboard. If it can't
+# import, telemetry_push stays None and every call site below just skips it (the
+# answer path is never affected).
+try:
+    from telemetry import push as telemetry_push
+except ImportError:
+    telemetry_push = None
 
 
 # Context storage (in-memory for MVP)
@@ -39,7 +49,8 @@ class UserSettings(BaseModel):
     date_of_birth: Optional[str] = None  # ISO format
     
 # Settings storage (persisted to file)
-SETTINGS_FILE = Path("/app/settings.json")
+BASE_DIR = Path(__file__).resolve().parent
+SETTINGS_FILE = Path(os.getenv("SETTINGS_FILE", str(BASE_DIR / "settings.json")))
 
 def load_settings() -> UserSettings:
     """Load user settings from file."""
@@ -57,11 +68,49 @@ def save_settings(settings: UserSettings):
     with open(SETTINGS_FILE, "w") as f:
         json.dump(settings.dict(), f, indent=2)
 
+
+def build_personalized_system_prompt() -> str:
+    """Build the system prompt personalized with today's date and the child's settings.
+
+    Extracted from /ask so other callers (e.g. the eval suite) reproduce the exact
+    same prompt construction instead of forking this logic.
+    """
+    import locale
+    try:
+        locale.setlocale(locale.LC_TIME, 'pt_PT.UTF-8')
+    except:
+        pass  # Fallback to default locale
+
+    now = datetime.now()
+    date_str = now.strftime("%A, %d de %B de %Y")
+
+    settings = load_settings()
+    personalization = ""
+
+    if settings.name:
+        personalization += f"\n\nA criança com quem estás a falar chama-se {settings.name}."
+
+    if settings.gender:
+        if settings.gender == "female":
+            personalization += " Ela é uma menina, usa sempre pronomes femininos."
+        elif settings.gender == "male":
+            personalization += " Ele é um menino, usa sempre pronomes masculinos."
+
+    if settings.date_of_birth:
+        try:
+            dob = datetime.fromisoformat(settings.date_of_birth)
+            age = (now - dob).days // 365
+            personalization += f" Tem {age} anos."
+        except:
+            pass
+
+    return f"{SYSTEM_PROMPT}{personalization}\n\nHoje é {date_str}.{read_memory_context()}"
+
 # Conversation logger
 class ConversationLogger:
     def __init__(self):
-        self.logs_dir = Path("/app/logs")
-        self.logs_dir.mkdir(exist_ok=True)
+        self.logs_dir = Path(os.getenv("LOGS_DIR", str(BASE_DIR / "logs")))
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
         
     def log_exchange(self, session_id: str, question: str, response: str, language: str):
         """Log a Q&A exchange to a JSON file."""
@@ -97,6 +146,8 @@ conversation_logger = ConversationLogger()
 async def lifespan(app: FastAPI):
     # Startup
     print("Starting Soft Terminal API...")
+    memory_dir = ensure_memory_repo()
+    print(f"Diana's memory repo ready at {memory_dir}")
     yield
     # Shutdown
     if os.getenv("SAVE_TRANSCRIPTS") == "true":
@@ -146,7 +197,7 @@ async def new_session():
 
 
 @app.post("/ask", response_model=AskResponse)
-async def ask(request: AskRequest):
+async def ask(request: AskRequest, background_tasks: BackgroundTasks):
     # Check topic safety
     is_safe, safety_message = is_safe_topic(request.question)
     if not is_safe:
@@ -164,45 +215,14 @@ async def ask(request: AskRequest):
         
         # Build conversation history for the LLM
         messages = []
-        for msg in request.history[-6:]:  # Keep last 3 exchanges for context
+        for msg in request.history[-30:]:  # generous window: kids take many tiny turns, so a shallow one drops the topic mid-conversation
             messages.append({
                 "role": msg.role,
                 "content": msg.content
             })
         
-        # Add current date/time and user settings to system prompt
-        from datetime import datetime
-        import locale
-        try:
-            locale.setlocale(locale.LC_TIME, 'pt_PT.UTF-8')
-        except:
-            pass  # Fallback to default locale
-        
-        now = datetime.now()
-        date_str = now.strftime("%A, %d de %B de %Y")
-        
-        # Load user settings to personalize response
-        settings = load_settings()
-        personalization = ""
-        
-        if settings.name:
-            personalization += f"\n\nA criança com quem estás a falar chama-se {settings.name}."
-        
-        if settings.gender:
-            if settings.gender == "female":
-                personalization += " Ela é uma menina, usa sempre pronomes femininos."
-            elif settings.gender == "male":
-                personalization += " Ele é um menino, usa sempre pronomes masculinos."
-        
-        if settings.date_of_birth:
-            try:
-                dob = datetime.fromisoformat(settings.date_of_birth)
-                age = (now - dob).days // 365
-                personalization += f" Tem {age} anos."
-            except:
-                pass
-        
-        system_with_date = f"{SYSTEM_PROMPT}{personalization}\n\nHoje é {date_str}."
+        # Personalized system prompt (date + child's settings) - shared with the eval suite
+        system_with_date = build_personalized_system_prompt()
         
         response = await llm.generate(
             system=system_with_date,
@@ -234,7 +254,25 @@ async def ask(request: AskRequest):
             response=full_text,
             language=language
         )
-        
+
+        # Curate this exchange into Diana's memory repo AFTER responding - she
+        # never waits on it. curate_exchange never raises (see curator.py).
+        background_tasks.add_task(curator.curate_exchange, request.question, full_text)
+
+        # Mirror the exchange into Supabase for the auditor dashboard. Same
+        # fire-and-forget shape as curation above; push_conversation never
+        # raises (see telemetry/push.py).
+        if telemetry_push:
+            background_tasks.add_task(
+                telemetry_push.push_conversation,
+                session_id,
+                datetime.now(),
+                request.question,
+                full_text,
+                language,
+                os.getenv("TELEMETRY_SOURCE", "local"),
+            )
+
         # Return EXACTLY what Claude sent - NO MODIFICATIONS
         return AskResponse(
             response=full_text
@@ -246,11 +284,55 @@ async def ask(request: AskRequest):
 
 
 
+class BeginNewTopicRequest(BaseModel):
+    history: List[Message] = Field(default_factory=list)
+
+
+@app.post("/begin-new-topic")
+async def begin_new_topic(request: BeginNewTopicRequest = BeginNewTopicRequest()):
+    """Diana started a new topic. Consolidate recent.md into durable memory before
+    the old thread's context decays away. Runs synchronously (it's a housekeeping
+    call, not on the answer path) but, like /ask's curation, can never fail loudly."""
+    transcript = None
+    if request.history:
+        transcript = "\n".join(f"{msg.role}: {msg.content}" for msg in request.history[-30:])
+    await curator.curate_topic_boundary(transcript)
+    return {"ok": True}
+
+
 @app.post("/tts", response_model=TTSResponse)
 async def tts(request: TTSRequest):
     # Stub implementation for TTS
     # Will integrate Piper TTS when running on Raspberry Pi
     return TTSResponse(audio_url=None)
+
+
+# Suggestions endpoint
+SUGGESTIONS_DIR = BASE_DIR / "suggestions"
+BASELINE_POOL_FILE = SUGGESTIONS_DIR / "pool.json"
+GENERATED_POOL_FILE = SUGGESTIONS_DIR / "generated_pool.json"
+
+
+def load_question_pool() -> List[str]:
+    """The current starter-question pool: the daily-generated one if present
+    and readable, else the bundled baseline. Never raises - a broken pool file
+    must never break the welcome screen."""
+    for path in (GENERATED_POOL_FILE, BASELINE_POOL_FILE):
+        try:
+            if path.exists():
+                questions = json.loads(path.read_text(encoding="utf-8")).get("questions") or []
+                if questions:
+                    return questions
+        except Exception:
+            logging.exception(f"suggestions: failed to read {path}")
+    return []
+
+
+@app.get("/suggestions")
+async def suggestions():
+    """Pool of starter-question chips for the welcome screen, regenerated daily
+    (see suggestions/generate.py) and weighted to Diana's current interests."""
+    return {"questions": load_question_pool()}
 
 
 # Settings endpoints

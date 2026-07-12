@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eli7 — Pastel Kawaii Clouds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFFBF3;
+    --pink:#FFD3E8;
+    --pink-deep:#FF8FC0;
+    --pink-pale:#FFE9F3;
+    --teal:#8CE8DC;
+    --teal-deep:#3FC7B8;
+    --teal-dark:#2FA79A;
+    --teal-pale:#E3F9F5;
+    --lilac:#D9C8FA;
+    --lilac-deep:#B39DE8;
+    --lilac-pale:#EFE8FC;
+    --gold:#FFD873;
+    --ink:#4A3A5C;
+    --ink-muted:#6F5E88;
+    --ink-soft:#9C8FB3;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:#EFEAE2;
+    font-family:'Quicksand', sans-serif;
+    padding:48px 24px 80px;
+  }
+
+  .page{
+    max-width:1024px;
+    margin:0 auto;
+  }
+
+  .page-head{
+    text-align:center;
+    margin-bottom:40px;
+  }
+  .page-head h1{
+    font-family:'Fredoka', sans-serif;
+    font-weight:700;
+    font-size:22px;
+    color:var(--ink);
+    margin:0 0 4px;
+    letter-spacing:0.5px;
+  }
+  .page-head p{
+    font-size:14px;
+    color:#9A9AA0;
+    margin:0;
+  }
+
+  .screen-block{ margin-bottom:56px; }
+  .screen-block:last-child{ margin-bottom:0; }
+
+  .caption{
+    font-family:'Quicksand', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:0.3px;
+    color:#A19DA8;
+    margin:0 0 12px 4px;
+  }
+
+  /* ---------- FRAME SHELL ---------- */
+  .frame{
+    width:1024px;
+    height:600px;
+    max-width:100%;
+    position:relative;
+    border-radius:36px;
+    overflow:hidden;
+    background:linear-gradient(180deg,#FFF6EC 0%,#FFFBF6 38%,#FDFBFE 100%);
+    box-shadow:
+      0 2px 6px rgba(90,60,110,0.05),
+      0 14px 30px rgba(150,110,170,0.14),
+      0 34px 60px rgba(150,110,170,0.10);
+  }
+
+  .frame-decor{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    overflow:hidden;
+  }
+
+  .frame-content{
+    position:relative;
+    z-index:1;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- DECORATIVE CLOUDS + STARS ---------- */
+  .deco-cloud{ position:absolute; }
+  .deco-star{ position:absolute; }
+
+  @keyframes floatA{ 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-12px) rotate(2deg); } }
+  @keyframes floatB{ 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-9px) rotate(-2deg); } }
+  @keyframes twinkle{ 0%,100%{ opacity:0.35; transform:scale(0.8); } 50%{ opacity:1; transform:scale(1.2); } }
+  @keyframes mascotBob{ 0%,100%{ transform:translateY(0) rotate(-1deg); } 50%{ transform:translateY(-9px) rotate(1deg); } }
+  @keyframes bounceDot{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-8px); } }
+  @keyframes sparkleSpin{ 0%,100%{ opacity:0.5; transform:scale(0.85) rotate(0deg); } 50%{ opacity:1; transform:scale(1.1) rotate(12deg); } }
+
+  .float-a{ animation:floatA 6s ease-in-out infinite; }
+  .float-b{ animation:floatB 7s ease-in-out infinite; }
+  .float-a.delay1{ animation-delay:.6s; }
+  .float-b.delay2{ animation-delay:1.1s; }
+  .twinkle{ animation:twinkle 2.4s ease-in-out infinite; }
+  .twinkle.d1{ animation-delay:.3s; }
+  .twinkle.d2{ animation-delay:.9s; }
+  .twinkle.d3{ animation-delay:1.4s; }
+  .twinkle.d4{ animation-delay:.5s; }
+
+  .mascot-wrap{ animation:mascotBob 3.4s ease-in-out infinite; display:inline-block; }
+
+  /* ---------- MASCOT (cloud pal) ---------- */
+  .mascot-svg{ display:block; filter:drop-shadow(0 8px 12px rgba(180,140,190,0.25)); }
+
+  /* ---------- TYPE ---------- */
+  .hero-title{
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    font-size:42px;
+    color:var(--ink);
+    text-align:center;
+    margin:0;
+    line-height:1.15;
+  }
+  .hero-subtitle{
+    font-family:'Quicksand', sans-serif;
+    font-weight:600;
+    font-size:19px;
+    color:var(--ink-muted);
+    text-align:center;
+    margin:0;
+  }
+  .squiggle{ display:block; margin:2px auto 0; }
+
+  /* ---------- CHIPS ---------- */
+  .chip-row{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .chip{
+    font-family:'Quicksand', sans-serif;
+    font-weight:700;
+    font-size:16.5px;
+    padding:13px 22px;
+    border-radius:999px;
+    border:2px solid transparent;
+    cursor:pointer;
+    white-space:nowrap;
+    min-height:44px;
+    display:inline-flex;
+    align-items:center;
+  }
+  .chip--pink{ background:var(--pink-pale); border-color:#FFC1DE; color:#B23E77; box-shadow:0 3px 0 #FFC1DE, 0 9px 16px rgba(255,143,192,0.20); transform:rotate(-2deg); }
+  .chip--teal{ background:var(--teal-pale); border-color:#8FE0D3; color:#166A61; box-shadow:0 3px 0 #8FE0D3, 0 9px 16px rgba(63,199,184,0.20); transform:rotate(1.5deg); }
+  .chip--lilac{ background:var(--lilac-pale); border-color:#C7B2F2; color:#5A3FA0; box-shadow:0 3px 0 #C7B2F2, 0 9px 16px rgba(179,157,232,0.20); transform:rotate(-1deg); }
+
+  /* ---------- INPUT BAR ---------- */
+  .input-bar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#FFFFFF;
+    border:2px solid #EFE3F7;
+    border-radius:44px;
+    height:64px;
+    width:100%;
+    max-width:900px;
+    padding:6px 8px 6px 26px;
+    box-shadow:0 3px 0 #F3E9FA, 0 12px 26px rgba(123,93,196,0.12);
+  }
+  .input-bar input{
+    flex:1;
+    border:none;
+    outline:none;
+    background:transparent;
+    font-family:'Quicksand', sans-serif;
+    font-weight:600;
+    font-size:18px;
+    color:var(--ink);
+  }
+  .input-bar input::placeholder{ color:#B7AEC7; }
+  .input-bar.is-disabled{ opacity:0.55; }
+
+  .send-btn{
+    width:52px;
+    height:52px;
+    min-width:52px;
+    border-radius:50%;
+    background:var(--teal-deep);
+    border:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 0 var(--teal-dark), 0 10px 18px rgba(63,199,184,0.35);
+    cursor:pointer;
+  }
+
+  /* ---------- CONVERSATION HEADER ---------- */
+  .conv-header{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:24px 36px 0;
+  }
+  .brand-lockup{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    font-size:21px;
+    color:var(--ink);
+  }
+  .brand-lockup .mascot-mini{ width:42px; height:32px; filter:drop-shadow(0 4px 6px rgba(180,140,190,0.25)); }
+  .brand-lockup .t{ color:var(--teal-dark); }
+  .brand-lockup .p{ color:var(--pink-deep); }
+
+  .btn-newchat{
+    font-family:'Quicksand', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    color:#166A61;
+    background:#FFFFFF;
+    border:2px solid #8FE0D3;
+    padding:11px 20px;
+    border-radius:999px;
+    box-shadow:0 3px 0 #DFF7F3, 0 6px 14px rgba(63,199,184,0.18);
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    min-height:44px;
+    cursor:pointer;
+  }
+
+  /* ---------- CONVERSATION BODY ---------- */
+  .conv-body{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    padding:20px 40px 0;
+    min-height:0;
+  }
+
+  .msg-question{
+    align-self:flex-end;
+    background:linear-gradient(135deg,#FFD9EC,#FFC0DE);
+    color:#7A3160;
+    padding:14px 22px;
+    border-radius:22px 22px 6px 22px;
+    font-family:'Quicksand', sans-serif;
+    font-weight:700;
+    font-size:19px;
+    max-width:640px;
+    box-shadow:0 3px 0 #FFB2D6, 0 8px 16px rgba(255,150,200,0.20);
+  }
+
+  .answer-row{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+  }
+  .mascot-avatar{ flex:0 0 auto; margin-top:2px; }
+  .answer-bubble{
+    background:#FFFFFF;
+    border:2px solid #E7F7F3;
+    border-radius:6px 24px 24px 24px;
+    padding:22px 26px;
+    font-family:'Quicksand', sans-serif;
+    color:var(--ink);
+    font-size:17.5px;
+    line-height:1.5;
+    max-width:700px;
+    box-shadow:0 3px 0 #EAF6F2, 0 12px 24px rgba(123,93,196,0.10);
+  }
+  .answer-bubble p{ margin:0 0 10px; }
+  .answer-bubble .greet{ color:var(--teal-dark); font-weight:700; }
+  .answer-bubble ul{ margin:12px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px; }
+  .answer-bubble li{ position:relative; padding-left:26px; font-weight:600; font-size:16.5px; }
+  .answer-bubble li::before{ content:"★"; position:absolute; left:0; top:0; color:var(--gold); font-size:14px; }
+
+  .conv-footer, .think-footer{
+    flex:0 0 auto;
+    display:flex;
+    justify-content:center;
+    padding:0 40px 26px;
+  }
+
+  /* ---------- WELCOME ---------- */
+  .welcome-hero{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    padding:0 60px;
+  }
+  .welcome-footer{
+    flex:0 0 auto;
+    display:flex;
+    justify-content:center;
+    padding:0 62px 30px;
+  }
+
+  /* ---------- THINKING ---------- */
+  .think-header{ flex:0 0 auto; padding:24px 36px 0; }
+  .think-body{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    padding:0 40px;
+    min-height:0;
+  }
+  .thinking-center{
+    flex:1;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+  }
+  .thinking-orbit{ position:relative; width:220px; height:170px; display:flex; align-items:center; justify-content:center; }
+  .thinking-orbit .mascot-wrap{ position:relative; z-index:1; }
+  .orbit-star{ position:absolute; }
+
+  .thinking-text{
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    font-size:23px;
+    color:var(--ink);
+    text-align:center;
+  }
+  .thinking-dots{ display:flex; gap:8px; justify-content:center; }
+  .thinking-dots span{
+    width:11px;
+    height:11px;
+    border-radius:50%;
+    background:var(--teal-deep);
+    display:inline-block;
+    animation:bounceDot 1s ease-in-out infinite;
+  }
+  .thinking-dots span:nth-child(2){ animation-delay:.15s; background:var(--pink-deep); }
+  .thinking-dots span:nth-child(3){ animation-delay:.3s; background:var(--lilac-deep); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="page-head">
+    <h1>Eli7</h1>
+    <p>Variant 2 — Pastel Kawaii Clouds</p>
+  </div>
+
+  <!-- ============ SCREEN 1 — WELCOME / EMPTY STATE ============ -->
+  <div class="screen-block">
+    <p class="caption">Screen 1 — Welcome / empty state</p>
+    <div class="frame frame-welcome">
+      <div class="frame-decor">
+        <svg class="deco-cloud float-a" style="top:-34px; left:-46px; width:220px; height:150px;" viewBox="0 0 200 150" aria-hidden="true">
+          <g fill="#FFE9F3" opacity="0.85">
+            <rect x="26" y="70" width="148" height="54" rx="27"/>
+            <circle cx="54" cy="70" r="34"/>
+            <circle cx="100" cy="52" r="42"/>
+            <circle cx="150" cy="72" r="30"/>
+          </g>
+        </svg>
+        <svg class="deco-cloud float-b delay2" style="top:-24px; right:-52px; width:200px; height:140px;" viewBox="0 0 200 150" aria-hidden="true">
+          <g fill="#E3F9F5" opacity="0.85">
+            <rect x="26" y="70" width="148" height="54" rx="27"/>
+            <circle cx="54" cy="70" r="34"/>
+            <circle cx="100" cy="52" r="42"/>
+            <circle cx="150" cy="72" r="30"/>
+          </g>
+        </svg>
+        <svg class="deco-star twinkle d1" style="top:56px; left:130px; width:22px; height:22px;" viewBox="0 0 20 20"><path d="M10,0 C10.5,6 14,9.5 20,10 C14,10.5 10.5,14 10,20 C9.5,14 6,10.5 0,10 C6,9.5 9.5,6 10,0 Z" fill="#FFD873"/></svg>
+        <svg class="deco-star twinkle d2" style="top:96px; left:88px; width:14px; height:14px;" viewBox="0 0 20 20"><path d="M10,0 C10.5,6 14,9.5 20,10 C14,10.5 10.5,14 10,20 C9.5,14 6,10.5 0,10 C6,9.5 9.5,6 10,0 Z" fill="#FF8FC0"/></svg>
+        <svg class="deco-star twinkle d3" style="top:64px; right:150px; width:18px; height:18px;" viewBox="0 0 20 20"><path d="M10,0 C10.5,6 14,9.5 20,10 C14,10.5 10.5,14 10,20 C9.5,14 6,10.5 0,10 C6,9.5 9.5,6 10,0 Z" fill="#8CE8DC"/></svg>
+        <svg class="deco-star twinkle d4" style="top:104px; right:96px; width:15px; height:15px;" viewBox="0 0 20 20"><path d="M10,0 C10.5,6 14,9.5 20,10 C14,10.5 10.5,14 10,20 C9.5,14 6,10.5 0,10 C6,9.5 9.5,6 10,0 Z" fill="#B39DE8"/></svg>
+      </div>
+
+      <div class="frame-content">
+        <div class="welcome-hero">
+          <div class="mascot-wrap">
+            <svg class="mascot-svg" width="168" height="126" viewBox="0 0 200 150" aria-hidden="true">
+              <ellipse cx="100" cy="132" rx="64" ry="8" fill="#4A3A5C" opacity="0.06"/>
+              <g fill="#F6D9EA">
+                <rect x="24" y="68" width="152" height="60" rx="30"/>
+                <circle cx="54" cy="72" r="38"/>
+                <circle cx="100" cy="52" r="46"/>
+                <circle cx="150" cy="74" r="36"/>
+              </g>
+              <g fill="#FFFFFF">
+                <rect x="28" y="72" width="144" height="52" rx="26"/>
+                <circle cx="54" cy="72" r="34"/>
+                <circle cx="100" cy="52" r="42"/>
+                <circle cx="150" cy="74" r="32"/>
+              </g>
+              <g transform="translate(126,14)">
+                <path d="M0,-11 C0.5,-2 4,1.5 12,2 C4,2.5 0.5,6 0,15 C-0.5,6 -4,2.5 -12,2 C-4,1.5 -0.5,-2 0,-11 Z" fill="#FFD873"/>
+              </g>
+              <circle cx="80" cy="60" r="7" fill="#5B4B73"/>
+              <circle cx="82.5" cy="57" r="2.1" fill="#fff"/>
+              <circle cx="120" cy="60" r="7" fill="#5B4B73"/>
+              <circle cx="122.5" cy="57" r="2.1" fill="#fff"/>
+              <ellipse cx="65" cy="74" rx="9" ry="5" fill="#FFB4CE" opacity="0.75"/>
+              <ellipse cx="135" cy="74" rx="9" ry="5" fill="#FFB4CE" opacity="0.75"/>
+              <path d="M88,78 Q100,90 112,78" fill="none" stroke="#5B4B73" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <h1 class="hero-title">O que queres descobrir hoje?</h1>
+          <svg class="squiggle" width="200" height="14" viewBox="0 0 220 16"><path d="M4,8 Q30,-2 56,8 T108,8 T160,8 T212,8" stroke="#8FE0D3" stroke-width="5" stroke-linecap="round" fill="none"/></svg>
+          <p class="hero-subtitle">Pergunta-me o que quiseres. Adoro perguntas.</p>
+
+          <div class="chip-row">
+            <span class="chip chip--pink">O que faz os trovões? ⛈️</span>
+            <span class="chip chip--teal">Porque é que as estrelas brilham? ✨</span>
+            <span class="chip chip--lilac">Porque é que os gatos ronronam? 🐱</span>
+          </div>
+        </div>
+
+        <div class="welcome-footer">
+          <div class="input-bar">
+            <input type="text" placeholder="Pergunta-me o que quiseres..." readonly>
+            <button class="send-btn" aria-label="Enviar pergunta">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 11.5L20 4L13 20L10.5 13L3 11.5Z" fill="#fff"/><path d="M10.5 13L20 4" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 2 — CONVERSATION ============ -->
+  <div class="screen-block">
+    <p class="caption">Screen 2 — Conversation</p>
+    <div class="frame frame-conversation">
+      <div class="frame-decor">
+        <svg class="deco-cloud float-a" style="top:-40px; left:-40px; width:170px; height:120px; opacity:.5" viewBox="0 0 200 150" aria-hidden="true">
+          <g fill="#FFE9F3" opacity="0.8">
+            <rect x="26" y="70" width="148" height="54" rx="27"/>
+            <circle cx="54" cy="70" r="34"/>
+            <circle cx="100" cy="52" r="42"/>
+            <circle cx="150" cy="72" r="30"/>
+          </g>
+        </svg>
+        <svg class="deco-star twinkle d2" style="top:20px; right:220px; width:14px; height:14px;" viewBox="0 0 20 20"><path d="M10,0 C10.5,6 14,9.5 20,10 C14,10.5 10.5,14 10,20 C9.5,14 6,10.5 0,10 C6,9.5 9.5,6 10,0 Z" fill="#FFD873"/></svg>
+      </div>
+
+      <div class="frame-content">
+        <div class="conv-header">
+          <div class="brand-lockup">
+            <svg class="mascot-mini" viewBox="0 0 200 150" aria-hidden="true">
+              <g fill="#F6D9EA"><rect x="24" y="68" width="152" height="60" rx="30"/><circle cx="54" cy="72" r="38"/><circle cx="100" cy="52" r="46"/><circle cx="150" cy="74" r="36"/></g>
+              <g fill="#FFFFFF"><rect x="28" y="72" width="144" height="52" rx="26"/><circle cx="54" cy="72" r="34"/><circle cx="100" cy="52" r="42"/><circle cx="150" cy="74" r="32"/></g>
+              <circle cx="80" cy="60" r="7" fill="#5B4B73"/><circle cx="82.5" cy="57" r="2.1" fill="#fff"/>
+              <circle cx="120" cy="60" r="7" fill="#5B4B73"/><circle cx="122.5" cy="57" r="2.1" fill="#fff"/>
+              <ellipse cx="65" cy="74" rx="9" ry="5" fill="#FFB4CE" opacity="0.75"/><ellipse cx="135" cy="74" rx="9" ry="5" fill="#FFB4CE" opacity="0.75"/>
+              <path d="M88,78 Q100,90 112,78" fill="none" stroke="#5B4B73" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+            <span><span class="t">Eli</span><span class="p">7</span></span>
+          </div>
+          <button class="btn-newchat">
+            <svg width="14" height="14" viewBox="0 0 20 20"><path d="M10,0 C10.5,6 14,9.5 20,10 C14,10.5 10.5,14 10,20 C9.5,14 6,10.5 0,10 C6,9.5 9.5,6 10,0 Z" fill="#166A61"/></svg>
+            Nova conversa ✨
+          </button>
+        </div>
+
+        <div class="conv-body">
+          <div class="msg-question">Porque é que o céu é azul?</div>
+
+          <div class="answer-row">
+            <div class="mascot-avatar">
+              <svg width="60" height="45" viewBox="0 0 200 150" aria-hidden="true">
+                <g fill="#F6D9EA"><rect x="24" y="68" width="152" height="60" rx="30"/><circle cx="54" cy="72" r="38"/><circle cx="100" cy="52" r="46"/><circle cx="150" cy="74" r="36"/></g>
+                <g fill="#FFFFFF"><rect x="28" y="72" width="144" height="52" rx="26"/><circle cx="54" cy="72" r="34"/><circle cx="100" cy="52" r="42"/><circle cx="150" cy="74" r="32"/></g>
+                <circle cx="80" cy="60" r="7" fill="#5B4B73"/><circle cx="82.5" cy="57" r="2.1" fill="#fff"/>
+                <circle cx="120" cy="60" r="7" fill="#5B4B73"/><circle cx="122.5" cy="57" r="2.1" fill="#fff"/>
+                <ellipse cx="65" cy="74" rx="9" ry="5" fill="#FFB4CE" opacity="0.75"/><ellipse cx="135" cy="74" rx="9" ry="5" fill="#FFB4CE" opacity="0.75"/>
+                <path d="M88,78 Q100,90 112,78" fill="none" stroke="#5B4B73" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="answer-bubble">
+              <p><span class="greet">Olá, Diana!</span> Que pergunta bonita. 🌤️ O céu parece uma tinta azul enorme, mas é só a luz do Sol a fazer um truque muito fofo com o ar que respiramos.</p>
+              <p>A luz do Sol parece branca, mas tem todas as cores escondidas lá dentro, como um arco-íris secreto. Quando essa luz passa pelo ar, a cor azul é a que mais gosta de saltar e espalhar-se para todos os lados!</p>
+              <ul>
+                <li>A luz do Sol traz todas as cores escondidas, tal como um arco-íris.</li>
+                <li>O ar espalha a luz azul muito mais do que as outras cores.</li>
+                <li>É por isso que vemos esse azul espalhado pelo céu, para onde quer que olhemos!</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="conv-footer">
+          <div class="input-bar">
+            <input type="text" placeholder="Pergunta-me o que quiseres..." readonly>
+            <button class="send-btn" aria-label="Enviar pergunta">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 11.5L20 4L13 20L10.5 13L3 11.5Z" fill="#fff"/><path d="M10.5 13L20 4" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 3 — THINKING / LOADING ============ -->
+  <div class="screen-block">
+    <p class="caption">Screen 3 — Thinking / loading</p>
+    <div class="frame frame-thinking">
+      <div class="frame-decor">
+        <svg class="deco-cloud float-b" style="top:-34px; right:-48px; width:190px; height:130px; opacity:.55" viewBox="0 0 200 150" aria-hidden="true">
+          <g fill="#E3F9F5" opacity="0.85">
+            <rect x="26" y="70" width="148" height="54" rx="27"/>
+            <circle cx="54" cy="70" r="34"/>
+            <circle cx="100" cy="52" r="42"/>
+            <circle cx="150" cy="72" r="30"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="frame-content">
+        <div class="think-header">
+          <div class="brand-lockup">
+            <svg class="mascot-mini" viewBox="0 0 200 150" aria-hidden="true">
+              <g fill="#F6D9EA"><rect x="24" y="68" width="152" height="60" rx="30"/><circle cx="54" cy="72" r="38"/><circle cx="100" cy="52" r="46"/><circle cx="150" cy="74" r="36"/></g>
+              <g fill="#FFFFFF"><rect x="28" y="72" width="144" height="52" rx="26"/><circle cx="54" cy="72" r="34"/><circle cx="100" cy="52" r="42"/><circle cx="150" cy="74" r="32"/></g>
+              <circle cx="80" cy="60" r="7" fill="#5B4B73"/><circle cx="82.5" cy="57" r="2.1" fill="#fff"/>
+              <circle cx="120" cy="60" r="7" fill="#5B4B73"/><circle cx="122.5" cy="57" r="2.1" fill="#fff"/>
+              <ellipse cx="65" cy="74" rx="9" ry="5" fill="#FFB4CE" opacity="0.75"/><ellipse cx="135" cy="74" rx="9" ry="5" fill="#FFB4CE" opacity="0.75"/>
+              <path d="M88,78 Q100,90 112,78" fill="none" stroke="#5B4B73" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+            <span><span class="t">Eli</span><span class="p">7</span></span>
+          </div>
+        </div>
+
+        <div class="think-body">
+          <div class="msg-question" style="margin-top:6px;">Porque é que o céu é azul?</div>
+
+          <div class="thinking-center">
+            <div class="thinking-orbit">
+              <svg class="orbit-star twinkle d1" style="top:6px; left:18px; width:20px; height:20px;" viewBox="0 0 20 20"><path d="M10,0 C10.5,6 14,9.5 20,10 C14,10.5 10.5,14 10,20 C9.5,14 6,10.5 0,10 C6,9.5 9.5,6 10,0 Z" fill="#FFD873"/></svg>
+              <svg class="orbit-star twinkle d3" style="top:22px; right:10px; width:16px; height:16px;" viewBox="0 0 20 20"><path d="M10,0 C10.5,6 14,9.5 20,10 C14,10.5 10.5,14 10,20 C9.5,14 6,10.5 0,10 C6,9.5 9.5,6 10,0 Z" fill="#FF8FC0"/></svg>
+              <svg class="orbit-star twinkle d2" style="bottom:10px; left:6px; width:15px; height:15px;" viewBox="0 0 20 20"><path d="M10,0 C10.5,6 14,9.5 20,10 C14,10.5 10.5,14 10,20 C9.5,14 6,10.5 0,10 C6,9.5 9.5,6 10,0 Z" fill="#8CE8DC"/></svg>
+              <svg class="orbit-star twinkle d4" style="bottom:2px; right:22px; width:18px; height:18px;" viewBox="0 0 20 20"><path d="M10,0 C10.5,6 14,9.5 20,10 C14,10.5 10.5,14 10,20 C9.5,14 6,10.5 0,10 C6,9.5 9.5,6 10,0 Z" fill="#B39DE8"/></svg>
+
+              <div class="mascot-wrap">
+                <svg class="mascot-svg" width="140" height="105" viewBox="0 0 200 150" aria-hidden="true">
+                  <ellipse cx="100" cy="132" rx="56" ry="7" fill="#4A3A5C" opacity="0.06"/>
+                  <g fill="#F6D9EA"><rect x="24" y="68" width="152" height="60" rx="30"/><circle cx="54" cy="72" r="38"/><circle cx="100" cy="52" r="46"/><circle cx="150" cy="74" r="36"/></g>
+                  <g fill="#FFFFFF"><rect x="28" y="72" width="144" height="52" rx="26"/><circle cx="54" cy="72" r="34"/><circle cx="100" cy="52" r="42"/><circle cx="150" cy="74" r="32"/></g>
+                  <g transform="translate(126,14)">
+                    <path d="M0,-11 C0.5,-2 4,1.5 12,2 C4,2.5 0.5,6 0,15 C-0.5,6 -4,2.5 -12,2 C-4,1.5 -0.5,-2 0,-11 Z" fill="#FFD873" class="twinkle"/>
+                  </g>
+                  <path d="M72,60 Q80,52 88,60" fill="none" stroke="#5B4B73" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M112,60 Q120,52 128,60" fill="none" stroke="#5B4B73" stroke-width="4" stroke-linecap="round"/>
+                  <ellipse cx="65" cy="76" rx="9" ry="5" fill="#FFB4CE" opacity="0.75"/>
+                  <ellipse cx="135" cy="76" rx="9" ry="5" fill="#FFB4CE" opacity="0.75"/>
+                  <path d="M90,82 Q100,90 110,82" fill="none" stroke="#5B4B73" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <p class="thinking-text">A pensar numa resposta divertida para ti...</p>
+            <div class="thinking-dots"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+
+        <div class="think-footer">
+          <div class="input-bar is-disabled">
+            <input type="text" placeholder="Pergunta-me o que quiseres..." readonly disabled>
+            <button class="send-btn" aria-label="Enviar pergunta" disabled style="opacity:.7;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 11.5L20 4L13 20L10.5 13L3 11.5Z" fill="#fff"/><path d="M10.5 13L20 4" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
