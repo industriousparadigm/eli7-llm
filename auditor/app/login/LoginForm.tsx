@@ -46,7 +46,11 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
           name="email"
           type="email"
           required
-          autoComplete="email"
+          autoComplete="username"
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           placeholder="you@example.com"
         />
 
